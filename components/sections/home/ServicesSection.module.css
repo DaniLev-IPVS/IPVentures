@@ -1,0 +1,77 @@
+.services {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--frame-width);
+  margin: 0 auto;
+  padding: 0 var(--space-xl);
+  text-align: center;
+}
+
+.title {
+  font-size: var(--text-7xl);
+  color: var(--color-white);
+  margin-bottom: var(--space-3xl);
+}
+
+.hudDisplay {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+
+.hudCircle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: radial-gradient(
+    circle,
+    rgba(59, 130, 246, 0.05) 0%,
+    transparent 70%
+  );
+}
+
+.serviceItems {
+  position: absolute;
+  inset: 0;
+}
+
+.serviceItem {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  --angle: calc(var(--index) * (360deg / var(--total)));
+  --radius: 320px;
+  transform: translate(-50%, -50%)
+    rotate(var(--angle))
+    translateY(calc(-1 * var(--radius)))
+    rotate(calc(-1 * var(--angle)));
+}
+
+.serviceName {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: color var(--duration-fast) ease,
+    background var(--duration-fast) ease;
+}
+
+.serviceName:hover {
+  color: var(--color-white);
+  background: rgba(255, 255, 255, 0.08);
+}

@@ -1,0 +1,67 @@
+.hiring {
+  width: 100%;
+  padding: var(--space-3xl) 0;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--frame-width);
+  margin: 0 auto;
+  padding: 0 var(--space-xl);
+}
+
+.jobList {
+  display: flex;
+  flex-direction: column;
+}
+
+.jobRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.jobTitle {
+  font-size: var(--text-4xl);
+  color: var(--color-white);
+}
+
+.jobMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.jobType,
+.jobLocation {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.jobSep {
+  color: var(--color-text-muted);
+}
+
+.ctaWrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-3xl);
+}
+
+.ctaButton {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-md) var(--space-2xl);
+  border-radius: var(--nav-radius);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--color-white);
+  font-size: var(--text-base);
+  transition: background var(--duration-fast) ease;
+}
+
+.ctaButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+}

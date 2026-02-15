@@ -1,0 +1,74 @@
+.revenue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--frame-width);
+  margin: 0 auto;
+  padding: 0 var(--space-xl);
+  text-align: center;
+}
+
+.heading {
+  font-size: var(--text-6xl);
+  color: var(--color-white);
+  line-height: 1.2;
+  margin-bottom: var(--space-3xl);
+}
+
+.statBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.stat {
+  font-size: var(--text-9xl);
+  color: var(--color-white);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.statLabel {
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+}
+
+.glassCards {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-3d-elements);
+}
+
+.card {
+  position: absolute;
+  width: 200px;
+  height: 280px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+.card:nth-child(1) {
+  top: 12%;
+  left: 8%;
+  transform: rotate(6deg);
+}
+
+.card:nth-child(2) {
+  bottom: 18%;
+  left: 12%;
+  transform: rotate(-4deg);
+}
+
+.card:nth-child(3) {
+  top: 20%;
+  right: 6%;
+  transform: rotate(-7deg);
+}

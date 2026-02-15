@@ -1,0 +1,76 @@
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  position: relative;
+  width: 100%;
+  max-width: var(--frame-width);
+  margin: 0 auto;
+  padding: 0 var(--space-xl);
+  min-height: var(--section-height);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.sectionNumber {
+  position: absolute;
+  top: 180px;
+  right: var(--space-xl);
+  font-size: 28px;
+  opacity: 0.9;
+  color: var(--color-white);
+  background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.5) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.heading {
+  font-size: var(--text-8xl);
+  color: var(--color-white);
+  line-height: 1.1;
+  max-width: 600px;
+}
+
+.interactiveElement {
+  position: absolute;
+  right: var(--space-xl);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 747px;
+  height: 488px;
+  mix-blend-mode: screen;
+}
+
+.glassCardsPlaceholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(59, 130, 246, 0.08) 0%,
+    transparent 70%
+  );
+}
+
+.scrollIndicator {
+  position: absolute;
+  bottom: var(--space-xl);
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0.5;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(8px);
+  }
+}

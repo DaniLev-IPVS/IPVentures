@@ -1,0 +1,94 @@
+.clients {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--frame-width);
+  margin: 0 auto;
+  padding: 0 var(--space-xl);
+  text-align: center;
+}
+
+.label {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.heading {
+  font-size: var(--text-7xl);
+  color: var(--color-white);
+  margin-top: var(--space-sm);
+  margin-bottom: var(--space-4xl);
+}
+
+.glassCards {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-3d-elements);
+}
+
+.card {
+  position: absolute;
+  width: 220px;
+  height: 300px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+.card:nth-child(1) {
+  top: 10%;
+  left: 5%;
+  transform: rotate(-5deg);
+}
+
+.card:nth-child(2) {
+  top: 8%;
+  right: 5%;
+  transform: rotate(4deg);
+}
+
+.sliderWrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.fadeMask {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--color-bg) 0%,
+    transparent 15%,
+    transparent 85%,
+    var(--color-bg) 100%
+  );
+}
+
+.slider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4xl);
+  padding: var(--space-xl) 0;
+  width: max-content;
+}
+
+.logoItem {
+  flex-shrink: 0;
+}
+
+.logoText {
+  font-size: var(--text-5xl);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}

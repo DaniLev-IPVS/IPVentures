@@ -1,0 +1,54 @@
+.partners {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.linesBackground {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 59px,
+    rgba(255, 255, 255, 0.03) 59px,
+    rgba(255, 255, 255, 0.03) 60px
+  );
+}
+
+.container {
+  width: 100%;
+  max-width: var(--frame-width);
+  margin: 0 auto;
+  padding: 0 var(--space-xl);
+  text-align: center;
+}
+
+.heading {
+  font-size: var(--text-7xl);
+  color: var(--color-white);
+  margin-bottom: var(--space-4xl);
+}
+
+.sliderWrapper {
+  width: 100%;
+  overflow: hidden;
+}
+
+.slider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4xl);
+  width: max-content;
+}
+
+.logoItem {
+  flex-shrink: 0;
+}
+
+.logoText {
+  font-size: var(--text-5xl);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}

@@ -1,0 +1,71 @@
+/* ==========================================================================
+   IP Ventures — Design Tokens
+   Base: 16px | Scale: 1.309 | Font: Onset Medium
+   ========================================================================== */
+
+:root {
+  /* ---- Colors ---- */
+  --color-bg: #040405;
+  --color-bg-nav: rgba(27, 27, 27, 0.05);
+  --color-white: #ffffff;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: rgba(255, 255, 255, 0.7);
+  --color-text-muted: rgba(255, 255, 255, 0.5);
+  --color-accent: #3b82f6;
+  --color-accent-cyan: #22d3ee;
+
+  /* ---- Typography — Modular Scale (1.309) ---- */
+  --font-family: 'Onset', sans-serif;
+  --font-weight: 500; /* Medium */
+  --letter-spacing: -0.02em;
+  --line-height: 1.4;
+
+  --text-9xl: 5rem;      /* 80px */
+  --text-8xl: 3.813rem;  /* 61px */
+  --text-7xl: 2.938rem;  /* 47px */
+  --text-6xl: 2.25rem;   /* 36px */
+  --text-5xl: 1.688rem;  /* 27px */
+  --text-4xl: 1.313rem;  /* 21px */
+  --text-base: 1rem;     /* 16px */
+  --text-sm: 0.75rem;    /* 12px */
+  --text-xs: 0.563rem;   /* 9px */
+
+  /* ---- Layout ---- */
+  --frame-width: 1440px;
+  --frame-height: 900px;
+  --section-height: 100vh;
+
+  /* ---- Nav ---- */
+  --nav-height: 40px;
+  --nav-padding-x: 12px;
+  --nav-padding-y: 8px;
+  --nav-gap: 12px;
+  --nav-radius: 99px;
+  --nav-top: 20px;
+
+  /* ---- Spacing ---- */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 96px;
+  --space-5xl: 128px;
+
+  /* ---- Z-Index Layers ---- */
+  --z-background: 0;
+  --z-content: 10;
+  --z-3d-elements: 20;
+  --z-overlay: 30;
+  --z-nav: 40;
+  --z-modal: 50;
+
+  /* ---- Animation (shared config for GSAP/Framer) ---- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 0.2s;
+  --duration-normal: 0.4s;
+  --duration-slow: 0.8s;
+}

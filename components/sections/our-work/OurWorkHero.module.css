@@ -1,0 +1,32 @@
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.videoBg {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.container {
+  position: relative;
+  z-index: var(--z-content);
+  width: 100%;
+  max-width: var(--frame-width);
+  margin: 0 auto;
+  padding: 0 var(--space-xl);
+  text-align: center;
+}
+
+.heading {
+  font-size: var(--text-8xl);
+  color: var(--color-white);
+  margin-bottom: var(--space-md);
+}
+
+.subheading {
+  font-size: var(--text-4xl);
+  color: var(--color-text-secondary);
+}
