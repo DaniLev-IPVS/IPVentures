@@ -119,7 +119,10 @@ function Logo({ mobile, debug }: { mobile: boolean; debug: Debug }) {
           backsideThickness={0.4}
           ior={1.5}
           roughness={0.04}
-          chromaticAberration={0.04}
+          chromaticAberration={0.14}
+          iridescence={0.2}
+          iridescenceIOR={1.3}
+          iridescenceThicknessRange={[220, 620]}
           anisotropicBlur={0.1}
           distortion={0.08}
           distortionScale={0.4}

@@ -51,8 +51,12 @@ export function makeStudioEnvTexture() {
   panel(w * 0.94, h * 0.22, w * 0.06, h * 0.56, "rgba(255,255,255,0.9)", 12);
   // Broad panels between the camera and each side: a face tilted more than
   // ~12° mirrors one of these and lights up; straight-on it stays dark.
-  strip(0.63, 0.07, 0.18, 0.82, "rgba(235,242,255,0.9)", 8);
-  strip(0.87, 0.07, 0.18, 0.82, "rgba(235,242,255,0.9)", 8);
+  // Faintly violet on one side, faintly blue on the other, for prism-like tints.
+  strip(0.63, 0.07, 0.18, 0.82, "rgba(244,240,255,0.9)", 8);
+  strip(0.87, 0.07, 0.18, 0.82, "rgba(238,244,255,0.9)", 8);
+  // Thin saturated slivers at the panel edges — colour only on grazing angles
+  strip(0.555, 0.008, 0.25, 0.75, "rgba(150,110,255,0.7)", 6);
+  strip(0.945, 0.008, 0.25, 0.75, "rgba(90,160,255,0.7)", 6);
   // Faint cool sheen behind the camera so the rest pose never fully vanishes
   strip(0.75, 0.05, 0.3, 0.7, "rgba(90,120,200,0.3)", 26);
   // Dim back light behind the logo (seen only through refraction)
