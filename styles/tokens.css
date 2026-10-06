@@ -15,8 +15,8 @@
   --color-accent-cyan: #22d3ee;
 
   /* ---- Typography — Modular Scale (1.309) ---- */
-  --font-family: 'Onset', sans-serif;
-  --font-weight: 500; /* Medium */
+  --font-family: var(--font-display), system-ui, sans-serif;
+  --font-weight: 400;
   --letter-spacing: -0.02em;
   --line-height: 1.4;
 
