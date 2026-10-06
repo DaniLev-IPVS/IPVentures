@@ -1,10 +1,26 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Michroma } from "next/font/google";
 import "./globals.css";
 
+const display = Michroma({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "IP Ventures — Building the Next Generation of IP",
+  title: "IP Ventures — Building the IPs of the future",
   description:
-    "IP Ventures is a full-service creative studio specializing in IP development, 3D animation, digital production, and influencer networks.",
+    "IP Ventures is a global creative studio building IP-native brands by driving attention, revenue and outcomes.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -13,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={display.variable}>
       <body>{children}</body>
     </html>
   );
