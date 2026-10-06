@@ -7,6 +7,13 @@
   touch-action: none;
 }
 
+/* ~30% smaller on desktop */
+@media (min-width: 768px) and (hover: hover) {
+  .stage {
+    width: min(66vw, 48vh * 1.5);
+  }
+}
+
 .stage canvas {
   width: 100% !important;
   height: 100% !important;

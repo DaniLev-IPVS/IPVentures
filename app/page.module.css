@@ -28,7 +28,7 @@
   color: #fff;
   text-wrap: balance;
   opacity: 0;
-  animation: reveal 1.8s var(--ease-out) 0.4s forwards;
+  animation: reveal 1.8s var(--ease-out) 1.6s forwards;
   pointer-events: none;
 }
 

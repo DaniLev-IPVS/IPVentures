@@ -6,6 +6,12 @@ import * as THREE from "three";
 
 const TWO_PI = Math.PI * 2;
 
+// Reveal: the logo travels in from far down the z axis over INTRO_S seconds.
+const INTRO_S = 3.2;
+const INTRO_Z = -70;
+// Quintic smoothstep: slow far away, fast mid-flight, gentle settle.
+const smootherstep = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
+
 /**
  * Desktop: the logo tilts toward the mouse with damped easing.
  * Touch: swipe to spin with inertia, then it settles back home.
@@ -23,6 +29,7 @@ export function usePointerRig(target: RefObject<THREE.Group | null>) {
     lastX: 0,
     lastY: 0,
     reduced: false,
+    introStart: -1, // clock time the reveal began
   });
 
   useEffect(() => {
@@ -104,7 +111,19 @@ export function usePointerRig(target: RefObject<THREE.Group | null>) {
     }
     s.rx = THREE.MathUtils.clamp(s.rx, -0.75, 0.75);
 
-    g.rotation.set(s.rx, s.ry, 0);
-    g.position.setY(s.reduced ? 0 : Math.sin(t * 0.6) * 0.06);
+    // Reveal from the distance, then hand over to the interactive pose.
+    if (s.introStart < 0) s.introStart = t;
+    const k = s.reduced
+      ? 1
+      : THREE.MathUtils.clamp((t - s.introStart) / INTRO_S, 0, 1);
+    const e = smootherstep(k);
+    const far = 1 - e;
+
+    g.rotation.set(s.rx + far * 0.5, s.ry - far * 1.6, far * 0.25);
+    g.position.set(
+      0,
+      (s.reduced ? 0 : Math.sin(t * 0.6) * 0.06) - far * 1.5,
+      INTRO_Z * far,
+    );
   });
 }

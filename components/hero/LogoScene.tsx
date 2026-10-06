@@ -80,12 +80,13 @@ function Logo({ mobile, debug }: { mobile: boolean; debug: Debug }) {
 
   return (
     <group ref={group} scale={scale}>
-      {/* Inner core: iridescent blue body carrying the footage. */}
+      {/* Inner core carries footage when a clip is set; hidden otherwise so
+          the obsidian shell stays see-through. */}
       <mesh
         geometry={geo.inner}
         rotation-x={Math.PI / 2}
         scale={INNER_SCALE}
-        visible={debug !== "shell"}
+        visible={debug === "core" || (debug !== "shell" && !!FOOTAGE_SRC)}
       >
         {/* Footage is emissive (unlit) like Spline's video layer, so it glows
             through the glass instead of reading as a lit plastic surface. */}
@@ -103,7 +104,8 @@ function Logo({ mobile, debug }: { mobile: boolean; debug: Debug }) {
         />
       </mesh>
 
-      {/* Outer shell: refractive glass with dispersion. */}
+      {/* Outer shell: smoky obsidian glass. Transparent faces fall into the
+          black background; grazing faces catch the studio panels. */}
       <mesh
         geometry={geo.outer}
         rotation-x={Math.PI / 2}
@@ -112,20 +114,23 @@ function Logo({ mobile, debug }: { mobile: boolean; debug: Debug }) {
       >
         <MeshTransmissionMaterial
           transmission={1}
-          thickness={0.35}
-          ior={1.64}
-          roughness={0}
-          chromaticAberration={0.1}
-          anisotropicBlur={0.15}
-          distortion={0.1}
+          thickness={1.2}
+          backside
+          backsideThickness={0.4}
+          ior={1.5}
+          roughness={0.04}
+          chromaticAberration={0.04}
+          anisotropicBlur={0.1}
+          distortion={0.08}
           distortionScale={0.4}
-          temporalDistortion={0.06}
-          color="#eef4ff"
-          attenuationColor="#3a6fff"
-          attenuationDistance={4}
+          temporalDistortion={0.04}
+          color="#c9d2ea"
+          attenuationColor="#070b18"
+          attenuationDistance={0.7}
+          specularIntensity={2}
           clearcoat={1}
-          clearcoatRoughness={0.04}
-          envMapIntensity={2.2}
+          clearcoatRoughness={0.03}
+          envMapIntensity={5}
           samples={mobile ? 4 : 8}
           resolution={mobile ? 512 : 1024}
         />
@@ -199,8 +204,8 @@ export default function LogoScene() {
           <Logo mobile={mobile} debug={debug} />
         </Suspense>
       )}
-      <directionalLight position={[8, 7, 6]} intensity={1.4} color="#ffffff" />
-      <directionalLight position={[-9, -3, 4]} intensity={0.7} color="#8fb6ff" />
+      <directionalLight position={[8, 7, 6]} intensity={2} color="#ffffff" />
+      <directionalLight position={[-9, -3, 4]} intensity={1} color="#8fb6ff" />
     </Canvas>
   );
 }
