@@ -4,22 +4,20 @@ import { useEffect, useRef } from "react";
 import styles from "./NodeField.module.css";
 
 const COLOR = "159, 180, 255"; // cool white-blue
-const NODE_COUNT = 240;
-const CLUSTERS = 5;
-const LINK_DIST = 0.3; // 3D distance that forms a connection
-const CAMERA = 2.6; // perspective focal distance in scene units
-const PULSE_RADIUS = 560; // px the ripple reaches before it dies out
-const PULSE_LIFE = 3; // seconds
+const NODE_COUNT = 260;
+const ARMS = 3;
+const FLOW = 0.016; // rad/s — the whole galaxy drifts like a slow river
+const LINK_DIST = 0.26; // normalised distance that forms a connection
+const CAMERA = 2.6; // perspective focal distance
+const PULSE_RADIUS = 560;
+const PULSE_LIFE = 3;
 
 type Pulse = { x: number; y: number; t0: number };
 
 type Node = {
-  cluster: number;
-  // offset from the cluster centre
-  ox: number;
-  oy: number;
-  oz: number;
-  // phases for organic drift
+  r: number; // radius from the galaxy centre (0..~1.2, 1 = screen edge)
+  th: number; // base angle along its arm
+  z: number; // depth
   p1: number;
   p2: number;
   p3: number;
@@ -57,10 +55,11 @@ function crest(dist: number, ring: number, width: number) {
 }
 
 /**
- * An organic network of nodes drifting through 3D space behind the hero,
- * lit by two slow-moving lamps so regions surface out of the dark and sink
- * back. Calmer near the centre so it never competes with the logo. On
- * desktop a click sends a water-like ripple through the nodes. Static under
+ * A loose spiral galaxy of nodes behind the hero, spanning the screen's
+ * extremities on any aspect ratio, turning slowly like a river and lit by
+ * two wandering lamps so regions surface out of the dark and sink back.
+ * Calmer near the centre so it never competes with the logo. On desktop a
+ * click sends a water-like ripple through the nodes. Static under
  * prefers-reduced-motion.
  */
 export default function NodeField() {
@@ -70,26 +69,23 @@ export default function NodeField() {
     const canvas = ref.current!;
     const ctx = canvas.getContext("2d")!;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
     const pulses: Pulse[] = [];
-    const r = rng(20261006);
+    const r = rng(20261007);
 
-    // Cluster seeds: spread across the volume, biased away from the centre.
-    const clusterPhase = Array.from({ length: CLUSTERS }, () => r() * Math.PI * 2);
-    const clusterBase = Array.from({ length: CLUSTERS }, (_, i) => {
-      const a = (i / CLUSTERS) * Math.PI * 2 + r() * 0.8;
-      const rad = 0.5 + r() * 0.4;
-      return { x: Math.cos(a) * rad * 1.05, y: Math.sin(a) * rad * 0.7, z: r() * 1.6 - 0.8 };
+    // Nodes scattered along three spiral arms, denser toward the rim.
+    const nodes: Node[] = Array.from({ length: NODE_COUNT }, (_, i) => {
+      const rad = 0.24 + Math.pow(r(), 0.7) * 0.98;
+      const arm = i % ARMS;
+      return {
+        r: rad,
+        th: (arm / ARMS) * Math.PI * 2 + rad * 2.3 + gaussian(r) * 0.28,
+        z: gaussian(r) * 0.5,
+        p1: r() * Math.PI * 2,
+        p2: r() * Math.PI * 2,
+        p3: r() * Math.PI * 2,
+      };
     });
-
-    const nodes: Node[] = Array.from({ length: NODE_COUNT }, (_, i) => ({
-      cluster: i % CLUSTERS,
-      ox: gaussian(r) * 0.28,
-      oy: gaussian(r) * 0.22,
-      oz: gaussian(r) * 0.32,
-      p1: r() * Math.PI * 2,
-      p2: r() * Math.PI * 2,
-      p3: r() * Math.PI * 2,
-    }));
 
     // Working buffers
     const wx = new Float32Array(NODE_COUNT);
@@ -99,6 +95,11 @@ export default function NodeField() {
     const sy = new Float32Array(NODE_COUNT);
     const sc = new Float32Array(NODE_COUNT);
     const br = new Float32Array(NODE_COUNT);
+
+    // Desktop reads a little clearer and larger than a phone.
+    const nodeAlpha = coarse ? 0.55 : 0.75;
+    const linkAlpha = coarse ? 0.2 : 0.28;
+    const nodeSize = coarse ? 1.2 : 1.7;
 
     let w = 0;
     let h = 0;
@@ -121,7 +122,10 @@ export default function NodeField() {
 
       const cx = w / 2;
       const cy = h / 2;
-      const unit = Math.min(w, h) * 0.62;
+      // Normalised radius 1 lands on the screen edge in each axis, so the
+      // galaxy always reaches the extremities — tall phones included.
+      const unitX = w * 0.5;
+      const unitY = h * 0.5;
       const maxD = Math.hypot(cx, cy);
 
       for (let i = pulses.length - 1; i >= 0; i--) {
@@ -131,34 +135,30 @@ export default function NodeField() {
       // Two lamps wandering through the volume. Nodes near a lamp are lit.
       const lamps = [
         {
-          x: Math.sin(t * 0.07) * 1.1,
-          y: Math.cos(t * 0.05 + 1.3) * 0.6,
-          z: Math.sin(t * 0.045 + 0.7) * 0.8,
+          x: Math.sin(t * 0.07) * 0.9,
+          y: Math.cos(t * 0.05 + 1.3) * 0.8,
+          z: Math.sin(t * 0.045 + 0.7) * 0.7,
         },
         {
-          x: Math.cos(t * 0.06 + 2.1) * 1.1,
-          y: Math.sin(t * 0.08 + 0.4) * 0.6,
-          z: Math.cos(t * 0.05 + 2.6) * 0.8,
+          x: Math.cos(t * 0.06 + 2.1) * 0.9,
+          y: Math.sin(t * 0.08 + 0.4) * 0.8,
+          z: Math.cos(t * 0.05 + 2.6) * 0.7,
         },
       ];
 
-      // World positions: drifting cluster centre + organic local wander
       for (let i = 0; i < NODE_COUNT; i++) {
         const n = nodes[i];
-        const c = clusterBase[n.cluster];
-        const cp = clusterPhase[n.cluster];
-        const ccx = c.x + Math.sin(t * 0.05 + cp) * 0.18;
-        const ccy = c.y + Math.cos(t * 0.04 + cp * 1.7) * 0.12;
-        const ccz = c.z + Math.sin(t * 0.035 + cp * 0.6) * 0.25;
-        wx[i] = ccx + n.ox + Math.sin(t * 0.21 + n.p1) * 0.035 + Math.sin(t * 0.07 + n.p2) * 0.05;
-        wy[i] = ccy + n.oy + Math.cos(t * 0.18 + n.p2) * 0.03 + Math.cos(t * 0.06 + n.p3) * 0.04;
-        wz[i] = ccz + n.oz + Math.sin(t * 0.15 + n.p3) * 0.04;
+        // Slow river flow around the centre with a gentle meander and breath
+        const th = n.th + t * FLOW + Math.sin(t * 0.09 + n.p1) * 0.05;
+        const rad = n.r * (1 + Math.sin(t * 0.05 + n.p2) * 0.045);
+        wx[i] = Math.cos(th) * rad + Math.sin(t * 0.07 + n.p3) * 0.02;
+        wy[i] = Math.sin(th) * rad + Math.cos(t * 0.06 + n.p1) * 0.02;
+        wz[i] = n.z + Math.sin(t * 0.12 + n.p3) * 0.08;
 
-        // Perspective projection
         const s = CAMERA / (CAMERA - wz[i]);
         sc[i] = s;
-        sx[i] = cx + wx[i] * unit * s;
-        sy[i] = cy + wy[i] * unit * s;
+        sx[i] = cx + wx[i] * unitX * s;
+        sy[i] = cy + wy[i] * unitY * s;
 
         // Brightness: lamp proximity × depth × distance from screen centre
         let lit = 0;
@@ -166,16 +166,16 @@ export default function NodeField() {
           const dx = wx[i] - L.x;
           const dy = wy[i] - L.y;
           const dz = wz[i] - L.z;
-          lit += Math.exp(-(dx * dx + dy * dy + dz * dz) / 0.75);
+          lit += Math.exp(-(dx * dx + dy * dy + dz * dz) / 0.6);
         }
         lit = Math.min(1, lit);
         const depth = 0.4 + 0.6 * (wz[i] + 1) * 0.5;
         const d = Math.hypot(sx[i] - cx, sy[i] - cy) / maxD;
-        const centre = 0.15 + 0.85 * Math.min(1, d * 1.5);
+        const centre = 0.12 + 0.88 * Math.min(1, d * 1.6);
         br[i] = lit * depth * centre;
       }
 
-      // Links between 3D neighbours
+      // Links between neighbours
       ctx.lineWidth = 1;
       for (let i = 0; i < NODE_COUNT; i++) {
         if (br[i] < 0.02) continue;
@@ -183,11 +183,11 @@ export default function NodeField() {
           if (br[j] < 0.02) continue;
           const dx = wx[i] - wx[j];
           const dy = wy[i] - wy[j];
-          const dz = wz[i] - wz[j];
+          const dz = (wz[i] - wz[j]) * 0.6;
           const d2 = dx * dx + dy * dy + dz * dz;
           if (d2 > LINK_DIST * LINK_DIST) continue;
           const falloff = 1 - Math.sqrt(d2) / LINK_DIST;
-          const a = Math.min(br[i], br[j]) * falloff * 0.2;
+          const a = Math.min(br[i], br[j]) * falloff * linkAlpha;
           if (a < 0.003) continue;
           ctx.strokeStyle = `rgba(${COLOR}, ${a})`;
           ctx.beginPath();
@@ -199,8 +199,8 @@ export default function NodeField() {
 
       // Nodes, brightened by passing ripples
       for (let i = 0; i < NODE_COUNT; i++) {
-        let a = br[i] * 0.5;
-        let radius = 0.7 + sc[i] * 1.2;
+        let a = br[i] * nodeAlpha;
+        let radius = 0.7 + sc[i] * nodeSize;
         for (const p of pulses) {
           const { ring, width, life } = ripple(t - p.t0);
           const dist = Math.hypot(sx[i] - p.x, sy[i] - p.y);
@@ -210,7 +210,7 @@ export default function NodeField() {
           radius += k * 1.1;
         }
         if (a < 0.004) continue;
-        ctx.fillStyle = `rgba(${COLOR}, ${Math.min(0.6, a)})`;
+        ctx.fillStyle = `rgba(${COLOR}, ${Math.min(0.8, a)})`;
         ctx.beginPath();
         ctx.arc(sx[i], sy[i], radius, 0, Math.PI * 2);
         ctx.fill();

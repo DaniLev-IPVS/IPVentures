@@ -54,9 +54,16 @@ export function makeStudioEnvTexture() {
   // Faintly violet on one side, faintly blue on the other, for prism-like tints.
   strip(0.63, 0.07, 0.18, 0.82, "rgba(244,240,255,0.9)", 8);
   strip(0.87, 0.07, 0.18, 0.82, "rgba(238,244,255,0.9)", 8);
-  // Thin saturated slivers at the panel edges — colour only on grazing angles
-  strip(0.555, 0.008, 0.25, 0.75, "rgba(150,110,255,0.7)", 6);
-  strip(0.945, 0.008, 0.25, 0.75, "rgba(90,160,255,0.7)", 6);
+  // Spectral slivers stacked toward the grazing azimuths: blue/violet first,
+  // then magenta and cyan nearer the sides, so steeper angles reveal more colour.
+  strip(0.585, 0.008, 0.25, 0.75, "rgba(110,140,255,0.6)", 6); // blue
+  strip(0.565, 0.008, 0.22, 0.78, "rgba(165,110,255,0.75)", 6); // violet
+  strip(0.545, 0.009, 0.2, 0.8, "rgba(235,90,255,0.7)", 6); // magenta
+  strip(0.525, 0.01, 0.18, 0.82, "rgba(60,230,255,0.75)", 6); // cyan
+  strip(0.915, 0.008, 0.25, 0.75, "rgba(165,110,255,0.6)", 6); // violet
+  strip(0.935, 0.008, 0.22, 0.78, "rgba(90,160,255,0.75)", 6); // blue
+  strip(0.955, 0.009, 0.2, 0.8, "rgba(60,230,255,0.7)", 6); // cyan
+  strip(0.975, 0.01, 0.18, 0.82, "rgba(235,90,255,0.6)", 6); // magenta
   // Faint cool sheen behind the camera so the rest pose never fully vanishes
   strip(0.75, 0.05, 0.3, 0.7, "rgba(90,120,200,0.3)", 26);
   // Dim back light behind the logo (seen only through refraction)
