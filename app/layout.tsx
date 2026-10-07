@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Michroma } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
 
-const display = Michroma({
-  weight: "400",
+const display = Montserrat({
+  weight: ["400", "500"],
   subsets: ["latin"],
   variable: "--font-display",
   display: "swap",

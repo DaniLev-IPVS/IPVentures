@@ -6,7 +6,9 @@ export default function Home() {
   return (
     <main className={styles.main}>
       <NodeField />
-      <h1 className={styles.headline}>Building the IPs of the future</h1>
+      <h1 className={styles.headline}>
+        Building the IP<span className={styles.lower}>s</span> of the future
+      </h1>
       <HeroCanvas />
     </main>
   );
