@@ -148,6 +148,61 @@ function Studio() {
   return <Environment map={map} />;
 }
 
+/**
+ * Slow spherical drift of the lighting so the reflections never settle:
+ * the environment precesses around the logo and two key lights orbit on
+ * their own paths, river-paced. Static under prefers-reduced-motion.
+ */
+function DriftingLights() {
+  const key = useRef<THREE.DirectionalLight>(null);
+  const fill = useRef<THREE.DirectionalLight>(null);
+  const [reduced] = useState(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+
+  useFrame(({ scene, clock }) => {
+    if (reduced) return;
+    const t = clock.elapsedTime;
+
+    // Environment: slow yaw with a gentle nod and roll, like a tumbling globe
+    scene.environmentRotation.set(
+      Math.sin(t * 0.031) * 0.35,
+      t * 0.045,
+      Math.sin(t * 0.019 + 1.2) * 0.2,
+    );
+
+    // Key light on a spherical path
+    const k = key.current;
+    if (k) {
+      const th = t * 0.07;
+      const ph = Math.PI / 3 + Math.sin(t * 0.05) * 0.5;
+      k.position.set(
+        12 * Math.sin(ph) * Math.cos(th),
+        12 * Math.cos(ph),
+        12 * Math.sin(ph) * Math.sin(th),
+      );
+    }
+    // Cool fill counter-orbiting lower down
+    const f = fill.current;
+    if (f) {
+      const th = -t * 0.055 + 2.4;
+      const ph = (Math.PI * 2) / 3 + Math.sin(t * 0.041 + 0.8) * 0.4;
+      f.position.set(
+        11 * Math.sin(ph) * Math.cos(th),
+        11 * Math.cos(ph),
+        11 * Math.sin(ph) * Math.sin(th),
+      );
+    }
+  });
+
+  return (
+    <>
+      <directionalLight ref={key} position={[8, 7, 6]} intensity={2} color="#ffffff" />
+      <directionalLight ref={fill} position={[-9, -3, 4]} intensity={1} color="#8fb6ff" />
+    </>
+  );
+}
+
 /** Dev-only: dumps scene facts to <body data-probe> for inspection. */
 function DebugProbe() {
   const frames = useRef(0);
@@ -207,8 +262,7 @@ export default function LogoScene() {
           <Logo mobile={mobile} debug={debug} />
         </Suspense>
       )}
-      <directionalLight position={[8, 7, 6]} intensity={2} color="#ffffff" />
-      <directionalLight position={[-9, -3, 4]} intensity={1} color="#8fb6ff" />
+      <DriftingLights />
     </Canvas>
   );
 }
