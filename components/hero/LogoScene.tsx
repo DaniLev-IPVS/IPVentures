@@ -20,9 +20,8 @@ const FOOTAGE_SRC: string | null = null;
 // inner "Curve011" scales 30/27/30, outer "Curve013" 30.07/27.98/30.27.
 const INNER_SCALE: [number, number, number] = [1, 27 / 30, 1];
 const OUTER_SCALE: [number, number, number] = [30.07 / 30, 27.98 / 30, 30.27 / 30];
-// Local extents: x is screen width, z becomes screen height after the 90° tilt.
+// Local x extent — screen width (z becomes screen height after the 90° tilt).
 const LOGO_W = 7.72;
-const LOGO_H = 5.0;
 
 function buildGeometry(
   positions: number[],
@@ -73,10 +72,11 @@ function Logo({ mobile, debug }: { mobile: boolean; debug: Debug }) {
   const footage = useFootageTexture(mobile ? null : FOOTAGE_SRC);
   usePointerRig(group);
 
-  const scale = Math.min(
-    (viewport.width * 0.8) / LOGO_W,
-    (viewport.height * 0.8) / LOGO_H,
-  );
+  // Fit the logo's width to a share of the full viewport: ~53vw / 58vh on
+  // desktop, ~75vw / 82vh on phones (the canvas itself covers the screen).
+  const fitW = viewport.width * (mobile ? 0.75 : 0.53);
+  const fitH = viewport.height * (mobile ? 0.82 : 0.58);
+  const scale = Math.min(fitW, fitH) / LOGO_W;
 
   return (
     <group ref={group} scale={scale}>
