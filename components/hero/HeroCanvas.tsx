@@ -9,11 +9,12 @@ const LogoScene = dynamic(() => import("./LogoScene"), {
   loading: () => null,
 });
 
-export default function HeroCanvas() {
+/** `running`: render every frame only while the hero is the current stop. */
+export default function HeroCanvas({ running = true }: { running?: boolean }) {
   return (
     <div className={styles.stage} aria-hidden="true">
       <div className={styles.glow} />
-      <LogoScene />
+      <LogoScene running={running} />
     </div>
   );
 }

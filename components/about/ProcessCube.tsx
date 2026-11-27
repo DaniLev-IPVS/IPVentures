@@ -24,6 +24,8 @@ const ACCENT = "#9cc0ff";
 const LOOP_PX = 640;
 /** The frame shown when motion is reduced: the reel on the phone. */
 const STILL_AT = 7.3;
+/** The loop plays at double speed (one pass ≈ 6.9s) so you see it all quickly. */
+const LOOP_SPEED = 2;
 const damp = THREE.MathUtils.damp;
 
 type Quality = { mobile: boolean; reduced: boolean };
@@ -61,7 +63,7 @@ function useLoopTexture(reduced: boolean) {
   }, [loop]);
 
   useFrame((state) => {
-    if (!reduced) paint(loop, state.clock.elapsedTime);
+    if (!reduced) paint(loop, state.clock.elapsedTime * LOOP_SPEED);
   });
 
   return loop.texture;

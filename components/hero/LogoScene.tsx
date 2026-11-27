@@ -134,7 +134,7 @@ function Logo({ mobile, debug }: { mobile: boolean; debug: Debug }) {
           clearcoat={1}
           clearcoatRoughness={0.03}
           envMapIntensity={5}
-          samples={mobile ? 4 : 8}
+          samples={mobile ? 4 : 6}
           resolution={mobile ? 512 : 1024}
         />
       </mesh>
@@ -233,7 +233,7 @@ function DebugProbe() {
   return null;
 }
 
-export default function LogoScene() {
+export default function LogoScene({ running = true }: { running?: boolean }) {
   // Client-only component (loaded with ssr: false), so window is safe here.
   const [mobile] = useState(
     () => window.matchMedia("(pointer: coarse)").matches,
@@ -245,7 +245,11 @@ export default function LogoScene() {
 
   return (
     <Canvas
-      dpr={[1, mobile ? 1.5 : 2]}
+      // Capped at 1.5×: the glass renders the scene again for refraction, so
+      // full retina resolution roughly doubles the GPU work for little gain.
+      dpr={[1, 1.5]}
+      // Idle (one frame on demand) once you have flown on to another section.
+      frameloop={running ? "always" : "demand"}
       // Measure layout size, not the on-screen box: inside the Z-scroll the
       // section is perspective-shrunk while it waits down the track.
       resize={{ offsetSize: true }}

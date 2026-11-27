@@ -19,6 +19,7 @@ const TOUCH_GAIN = 0.0042; // track units per finger pixel
 const SNAP_DELAY = 170; // ms of quiet before settling on a stop
 const EASE = 5.2; // higher = camera catches up faster
 const COMMIT = 0.06; // share of a stop a wheel gesture must travel to commit
+const SETTLE = 280; // ms of quiet a trackpad's momentum tail must show before input counts again
 
 /**
  * Virtual scroll along one axis: wheel, touch and keys move a target position
@@ -43,6 +44,10 @@ export function useZScroll({ count, paused = false, onFrame, onStop, initial = 0
 
   // Where the current wheel gesture started (a stop index), or null between gestures.
   const gestureFrom = useRef<number | null>(null);
+  // After a gesture lands on a stop, trailing momentum is swallowed until it
+  // goes quiet (or a clearly new push starts), so one swipe = one stop.
+  const settleUntil = useRef(0);
+  const lastWheel = useRef(0);
 
   const max = count - 1;
   const clamp = useCallback((v: number) => Math.min(max, Math.max(0, v)), [max]);
@@ -58,18 +63,18 @@ export function useZScroll({ count, paused = false, onFrame, onStop, initial = 0
 
   /**
    * Once the wheel goes quiet, settle on a stop. A deliberate push past
-   * COMMIT in either direction moves to the neighbouring stop; long pushes
-   * can travel several stops; tiny nudges spring back.
+   * COMMIT in either direction moves to the neighbouring stop, never further,
+   * however hard the swipe; tiny nudges spring back.
    */
   const scheduleSnap = useCallback(() => {
     if (snapTimer.current) clearTimeout(snapTimer.current);
     snapTimer.current = setTimeout(() => {
       const from = gestureFrom.current ?? Math.round(target.current);
       const moved = target.current - from;
-      const steps =
-        Math.abs(moved) < COMMIT ? 0 : Math.sign(moved) * Math.max(1, Math.round(Math.abs(moved)));
+      const steps = Math.abs(moved) < COMMIT ? 0 : Math.sign(moved);
       target.current = clamp(from + steps);
       gestureFrom.current = null;
+      if (steps) settleUntil.current = performance.now() + SETTLE;
     }, SNAP_DELAY);
   }, [clamp]);
 
@@ -102,8 +107,23 @@ export function useZScroll({ count, paused = false, onFrame, onStop, initial = 0
       e.preventDefault();
       const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1;
       const delta = Math.max(-120, Math.min(120, e.deltaY * unit));
+      const now = performance.now();
+      const abs = Math.abs(delta);
+      if (now < settleUntil.current) {
+        // Momentum decays; a fresh push jumps back up. Anything else is tail.
+        const fresh = abs > 24 && abs > lastWheel.current * 1.8;
+        lastWheel.current = abs;
+        if (!fresh) {
+          settleUntil.current = now + SETTLE;
+          return;
+        }
+        settleUntil.current = 0;
+      }
+      lastWheel.current = abs;
       if (gestureFrom.current === null) gestureFrom.current = Math.round(target.current);
-      target.current = clamp(target.current + delta * WHEEL_GAIN);
+      // The camera may lean toward the next stop but never past it mid-gesture.
+      const from = gestureFrom.current;
+      target.current = clamp(Math.min(from + 1, Math.max(from - 1, target.current + delta * WHEEL_GAIN)));
       scheduleSnap();
     };
     window.addEventListener("wheel", onWheel, { passive: false });
@@ -113,7 +133,7 @@ export function useZScroll({ count, paused = false, onFrame, onStop, initial = 0
   // Touch: vertical swipes drive the camera; horizontal swipes are left alone
   // so rows that scroll sideways keep working.
   useEffect(() => {
-    let y0 = 0, x0 = 0, yPrev = 0, tPrev = 0, vel = 0;
+    let y0 = 0, x0 = 0, yPrev = 0, tPrev = 0, vel = 0, from = 0;
     let axis: "x" | "y" | null = null;
     const start = (e: TouchEvent) => {
       if (pausedRef.current) return;
@@ -123,6 +143,7 @@ export function useZScroll({ count, paused = false, onFrame, onStop, initial = 0
       tPrev = performance.now();
       vel = 0;
       axis = null;
+      from = Math.round(target.current);
       if (snapTimer.current) clearTimeout(snapTimer.current);
     };
     const move = (e: TouchEvent) => {
@@ -141,7 +162,7 @@ export function useZScroll({ count, paused = false, onFrame, onStop, initial = 0
       vel = dy / Math.max(1, now - tPrev); // px per ms
       yPrev = t.clientY;
       tPrev = now;
-      target.current = clamp(target.current + dy * TOUCH_GAIN);
+      target.current = clamp(Math.min(from + 1, Math.max(from - 1, target.current + dy * TOUCH_GAIN)));
     };
     const end = () => {
       if (axis !== "y") return;

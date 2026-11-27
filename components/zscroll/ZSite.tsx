@@ -33,12 +33,30 @@ export default function ZSite() {
   const cue = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const [reached, setReached] = useState(0); // furthest stop visited (lazy-mounts heavy scenes)
-  // The About cube mounts once the hero has had a moment to load, so it is
-  // ready (and already drawn) by the time you fly in.
+  // The About cube is a second glass scene, and building it competes with
+  // the hero's own start-up. Fetch its code early, but only build it once the
+  // hero intro has played and the browser is idle, or as soon as you start
+  // to scroll, whichever comes first.
   const [aboutReady, setAboutReady] = useState(false);
   useEffect(() => {
-    const id = window.setTimeout(() => setAboutReady(true), 1500);
-    return () => window.clearTimeout(id);
+    const prefetch = window.setTimeout(() => void import("@/components/about/ProcessCube"), 1200);
+    let idle = 0;
+    const ready = () => setAboutReady(true);
+    const timer = window.setTimeout(() => {
+      idle = window.requestIdleCallback?.(ready, { timeout: 1500 }) ?? window.setTimeout(ready, 0);
+    }, 4200);
+    const intent = { once: true, passive: true } as const;
+    window.addEventListener("wheel", ready, intent);
+    window.addEventListener("touchstart", ready, intent);
+    window.addEventListener("keydown", ready, { once: true });
+    return () => {
+      window.clearTimeout(prefetch);
+      window.clearTimeout(timer);
+      if (idle) window.cancelIdleCallback?.(idle);
+      window.removeEventListener("wheel", ready);
+      window.removeEventListener("touchstart", ready);
+      window.removeEventListener("keydown", ready);
+    };
   }, []);
   const [contactOpen, setContactOpen] = useState(false);
   // Phones: which team card the swipe row is showing (drives the dots).
@@ -157,7 +175,7 @@ export default function ZSite() {
           <h1 className={heroStyles.headline}>
             Building the IP<span className={heroStyles.lower}>s</span> of the future
           </h1>
-          <HeroCanvas />
+          <HeroCanvas running={active === 0} />
           <div ref={cue} className={styles.cue} aria-hidden="true">
             <span className={`${styles.mouse} ${styles.desk}`} />
             <span className={`${styles.swipe} ${styles.touch}`} />
