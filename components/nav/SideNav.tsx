@@ -15,7 +15,10 @@ type Props = {
  * Right-edge navigation. Idle it is a slim glass capsule of dots (the current
  * stop glows); on hover or focus it widens and the section names slide in.
  * Touch devices: first tap opens it, a tap outside closes it.
+ * Phones (≤760px): a bottom glass pill instead (mark, dots, contact) where
+ * every tap acts at once.
  */
+const isBar = () => window.matchMedia("(max-width: 760px)").matches;
 export default function SideNav({ active, onSelect, onContact }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLElement>(null);
@@ -31,7 +34,7 @@ export default function SideNav({ active, onSelect, onContact }: Props) {
 
   // On touch, the first tap only expands the capsule.
   const guard = (e: React.PointerEvent) => {
-    if (e.pointerType === "touch" && !open) {
+    if (e.pointerType === "touch" && !open && !isBar()) {
       e.preventDefault();
       e.stopPropagation();
       setOpen(true);
@@ -45,7 +48,7 @@ export default function SideNav({ active, onSelect, onContact }: Props) {
       aria-label="Sections"
       onPointerDownCapture={guard}
       onClickCapture={(e) => {
-        if (!open && window.matchMedia("(hover: none)").matches) {
+        if (!open && !isBar() && window.matchMedia("(hover: none)").matches) {
           e.preventDefault();
           e.stopPropagation();
         }
@@ -63,6 +66,7 @@ export default function SideNav({ active, onSelect, onContact }: Props) {
               className={`${styles.item} ${i === active ? styles.active : ""}`}
               onClick={() => onSelect(i)}
               aria-current={i === active ? "true" : undefined}
+              aria-label={s.label}
             >
               <i className={styles.dot} aria-hidden="true" />
               <span className={styles.label}>{s.label}</span>
@@ -71,7 +75,7 @@ export default function SideNav({ active, onSelect, onContact }: Props) {
         ))}
       </ul>
 
-      <button className={styles.contact} onClick={onContact}>
+      <button className={styles.contact} onClick={onContact} aria-label="Contact">
         <svg className={styles.icon} viewBox="0 0 16 16" aria-hidden="true">
           <path d="M2 4h12v8H2z M2 4l6 5 6-5" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
         </svg>

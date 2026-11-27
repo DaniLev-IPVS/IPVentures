@@ -72,7 +72,11 @@ type Quality = { mobile: boolean; reduced: boolean };
 
 /** Which cube the pointer is on, and where inside it (-1..1). Lives in a ref
  *  so pointer moves never re-render React. */
-type Pointer = { id: string | null; x: number; y: number };
+/**
+ * `armed` is the cube a finger has tapped once: on touch the first tap turns
+ * it to face you (the hover look), a second tap on it opens the venture.
+ */
+type Pointer = { id: string | null; x: number; y: number; armed: string | null; touch: boolean };
 
 type Slot = { x: number; y: number; z: number; size: number };
 
@@ -134,6 +138,9 @@ function Cube({
   pointer,
   onHover,
   onLeave,
+  onTouch,
+  onArm,
+  onDisarm,
   quality,
   halo,
   env,
@@ -146,6 +153,10 @@ function Cube({
   /** Report the pointer entering/moving on this cube (x,y in -1..1), or leaving. */
   onHover: (id: string, x: number, y: number) => void;
   onLeave: (id: string) => void;
+  /** Touch: note the input type, turn a tapped cube, release it. */
+  onTouch: (touch: boolean) => void;
+  onArm: (id: string) => void;
+  onDisarm: (id: string) => void;
   quality: Quality;
   halo: THREE.Texture;
   /** The studio map, bound to the glass itself (see the note on the material). */
@@ -306,10 +317,18 @@ function Cube({
           e.stopPropagation();
           track(e);
         }}
-        onPointerOut={() => onLeave(venture.id)}
+        onPointerDown={(e) => onTouch(e.pointerType === "touch")}
+        onPointerOut={(e) => {
+          // A lifted finger "leaves" every time; a tapped cube stays turned.
+          if (e.pointerType === "touch" && pointer.current.armed === venture.id) return;
+          onLeave(venture.id);
+        }}
+        onPointerMissed={() => onDisarm(venture.id)}
         onClick={(e) => {
           e.stopPropagation();
           if (e.delta > 8) return; // a drag/scroll, not a tap
+          const p = pointer.current;
+          if (p.touch && p.armed !== venture.id) return onArm(venture.id);
           onOpen(venture);
         }}
       >
@@ -450,7 +469,7 @@ function Scene({
 }) {
   const items = ventures.items;
   const slots = useLayout(items.length);
-  const pointer = useRef<Pointer>({ id: null, x: 0, y: 0 });
+  const pointer = useRef<Pointer>({ id: null, x: 0, y: 0, armed: null, touch: false });
   const [halo] = useState(makeHaloTexture);
   const [env] = useState(makeStudioEnvTexture);
   const gl = useThree((s) => s.gl);
@@ -473,13 +492,32 @@ function Scene({
         pointer.current.id = null;
         el.style.removeProperty("cursor");
       },
+      touch(t: boolean) {
+        pointer.current.touch = t;
+      },
+      arm(id: string) {
+        const p = pointer.current;
+        p.armed = id;
+        p.id = id;
+        p.x = 0;
+        p.y = 0;
+      },
+      disarm(id: string) {
+        const p = pointer.current;
+        if (p.armed !== id) return;
+        p.armed = null;
+        if (p.id === id) p.id = null;
+      },
     };
   }, [gl]);
 
   // Leaving the canvas (or the window) always releases the hover.
   useEffect(() => {
     const el = gl.domElement;
-    const clear = () => {
+    const clear = (e: Event) => {
+      // Touch fires pointerleave on every lift; keep a tapped cube turned.
+      if ((e as PointerEvent).pointerType === "touch" && pointer.current.armed) return;
+      pointer.current.armed = null;
       pointer.current.id = null;
       el.style.removeProperty("cursor");
     };
@@ -503,6 +541,9 @@ function Scene({
           pointer={pointer}
           onHover={handlers.hover}
           onLeave={handlers.leave}
+          onTouch={handlers.touch}
+          onArm={handlers.arm}
+          onDisarm={handlers.disarm}
           quality={quality}
           halo={halo}
           env={env}

@@ -14,6 +14,7 @@ export const sections = [
 export const hero = {
   headline: "Building the IPs of the future",
   cue: "Scroll to enter",
+  cueTouch: "Swipe up",
 };
 
 export const about = {
@@ -21,6 +22,9 @@ export const about = {
   headline: "We build the characters, channels and companies the internet can’t stop watching.",
   body:
     "IP Ventures is a venture studio for internet-native IP. We start companies, run them, and partner with the people who build them, across social media, animation and entertainment. Every venture runs with its own team. What they share is knowledge, know-how and resources, so every win makes the next one faster.",
+  /** Phones show only the first two sentences. */
+  bodyShort:
+    "IP Ventures is a venture studio for internet-native IP. We start companies, run them, and partner with the people who build them.",
   stats: [
     { value: 1, suffix: "B+", label: "views across our ventures" },
     { value: 1000, suffix: "+", label: "videos produced" },
@@ -45,6 +49,7 @@ export const ventures = {
   eyebrow: "02 — Ventures",
   headline: "Three companies. One playbook.",
   sub: "Hover to look inside. Click to visit.",
+  subTouch: "Tap a cube to look inside. Tap again to visit.",
   items: [
     {
       id: "influity",

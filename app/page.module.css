@@ -56,6 +56,33 @@
   }
 }
 
+/* Phones: larger, two balanced lines, a little less tracking. */
+@media (max-width: 760px) {
+  .headline {
+    top: clamp(72px, 15svh, 130px);
+    padding: 0 28px;
+    font-size: clamp(0.95rem, 4.4vw, 1.15rem);
+    letter-spacing: 0.26em;
+    text-indent: 0.26em;
+    line-height: 1.7;
+    animation-name: revealPhone;
+  }
+  @keyframes revealPhone {
+    from {
+      opacity: 0;
+      filter: blur(10px);
+      transform: translateY(8px);
+      letter-spacing: 0.4em;
+    }
+    to {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateY(0);
+      letter-spacing: 0.26em;
+    }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .headline {
     animation: fade 1.2s ease-out 0.2s forwards;

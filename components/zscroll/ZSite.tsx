@@ -41,6 +41,16 @@ export default function ZSite() {
     return () => window.clearTimeout(id);
   }, []);
   const [contactOpen, setContactOpen] = useState(false);
+  // Phones: which team card the swipe row is showing (drives the dots).
+  const [teamCard, setTeamCard] = useState(0);
+  const onTeamScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const row = e.currentTarget;
+    const card = row.firstElementChild as HTMLElement | null;
+    if (!card) return;
+    const pitch = card.offsetWidth + 14; // card + gap
+    const atEnd = row.scrollLeft + row.clientWidth >= row.scrollWidth - 4;
+    setTeamCard(atEnd ? team.people.length - 1 : Math.round(row.scrollLeft / pitch));
+  };
   const reduced = useRef(false);
 
   useEffect(() => {
@@ -149,8 +159,10 @@ export default function ZSite() {
           </h1>
           <HeroCanvas />
           <div ref={cue} className={styles.cue} aria-hidden="true">
-            <span className={styles.mouse} />
-            <span>{hero.cue}</span>
+            <span className={`${styles.mouse} ${styles.desk}`} />
+            <span className={`${styles.swipe} ${styles.touch}`} />
+            <span className={styles.desk}>{hero.cue}</span>
+            <span className={styles.touch}>{hero.cueTouch}</span>
           </div>
         </section>
 
@@ -160,7 +172,8 @@ export default function ZSite() {
             <div className={styles.aboutText}>
               <p className={styles.eyebrow}>{about.eyebrow}</p>
               <h2 className={styles.h2}>{about.headline}</h2>
-              <p className={styles.body}>{about.body}</p>
+              <p className={`${styles.body} ${styles.wide}`}>{about.body}</p>
+              <p className={`${styles.body} ${styles.narrow}`}>{about.bodyShort}</p>
             </div>
             <div className={styles.stats}>
               {about.stats.map((s) => (
@@ -181,7 +194,10 @@ export default function ZSite() {
             <div className={styles.center}>
               <p className={styles.eyebrow}>{ventures.eyebrow}</p>
               <h2 className={styles.h2}>{ventures.headline}</h2>
-              <p className={styles.sub}>{ventures.sub}</p>
+              <p className={styles.sub}>
+                <span className={styles.desk}>{ventures.sub}</span>
+                <span className={styles.touch}>{ventures.subTouch}</span>
+              </p>
             </div>
             <div className={styles.cubes}>{reached >= 1 && <VentureCubes />}</div>
             <ul className={styles.ventureList}>
@@ -207,9 +223,14 @@ export default function ZSite() {
               <h2 className={styles.h2}>{team.headline}</h2>
               <p className={styles.body}>{team.body}</p>
             </div>
-            <div className={styles.teamRow}>
+            <div className={styles.teamRow} onScroll={onTeamScroll}>
               {team.people.map((p) => (
                 <TeamCard key={p.name} {...p} />
+              ))}
+            </div>
+            <div className={styles.teamDots} aria-hidden="true">
+              {team.people.map((p, i) => (
+                <i key={p.name} className={i === teamCard ? styles.on : undefined} />
               ))}
             </div>
           </div>
