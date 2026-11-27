@@ -84,9 +84,9 @@ export const team = {
   headline: "Operators, not spectators.",
   body: "We’ve grown channels, characters and companies from zero. Now we do it on purpose.",
   people: [
-    { name: "Dani Lev", role: "Co-founder & President", line: "Runs product and operations across the studio.", linkedin: "#", photo: null as string | null },
-    { name: "Dan Rozenberg", role: "Co-founder", line: "Partnerships and growth. Opens the doors.", linkedin: "#", photo: null as string | null },
-    { name: "Mike Nike", role: "Co-founder", line: "Characters and IP. Owns the cast.", linkedin: "#", photo: null as string | null },
+    { name: "Dani Lev", role: "Co-founder & President", line: "Runs product and operations across the studio.", linkedin: "#", photo: "/team/dani-lev.webp" as string | null },
+    { name: "Dan Rozenberg", role: "Co-founder", line: "Partnerships and growth. Opens the doors.", linkedin: "#", photo: "/team/dan-rozenberg.webp" as string | null },
+    { name: "Mike Nike", role: "Co-founder", line: "Characters and IP. Owns the cast.", linkedin: "#", photo: "/team/mike-nike.webp" as string | null },
   ],
 };
 

@@ -18,6 +18,10 @@ const VentureCubes = dynamic(() => import("@/components/ventures/VentureCubes"),
   ssr: false,
   loading: () => null,
 });
+const ProcessCube = dynamic(() => import("@/components/about/ProcessCube"), {
+  ssr: false,
+  loading: () => null,
+});
 
 /** Distance between planes on the Z track, in CSS px at perspective 1000px. */
 const GAP = 1600;
@@ -29,6 +33,13 @@ export default function ZSite() {
   const cue = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const [reached, setReached] = useState(0); // furthest stop visited (lazy-mounts heavy scenes)
+  // The About cube mounts once the hero has had a moment to load, so it is
+  // ready (and already drawn) by the time you fly in.
+  const [aboutReady, setAboutReady] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setAboutReady(true), 1500);
+    return () => window.clearTimeout(id);
+  }, []);
   const [contactOpen, setContactOpen] = useState(false);
   const reduced = useRef(false);
 
@@ -155,6 +166,11 @@ export default function ZSite() {
               {about.stats.map((s) => (
                 <StatCard key={s.label} {...s} play={reached >= 1} />
               ))}
+            </div>
+            <div className={styles.aboutCube}>
+              <div className={styles.cubeBleed}>
+                {(aboutReady || reached >= 1) && <ProcessCube running={active === 1} />}
+              </div>
             </div>
           </div>
         </section>

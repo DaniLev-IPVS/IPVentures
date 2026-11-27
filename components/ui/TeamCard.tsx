@@ -8,7 +8,7 @@ type Props = {
   photo?: string | null;
 };
 
-/** Portrait in black and white that warms to colour on hover. */
+/** Painted portrait that brightens to full colour on hover. */
 export default function TeamCard({ name, role, line, linkedin, photo }: Props) {
   const initials = name
     .split(/\s+/)
