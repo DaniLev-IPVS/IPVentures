@@ -62,7 +62,13 @@ export default function ContactModal({ open, onClose, submit = postContact }: Pr
     if (open) {
       lastFocus.current = document.activeElement as HTMLElement;
       setVisible(true);
-      requestAnimationFrame(() => dialog.current?.querySelector<HTMLElement>("input")?.focus());
+      // On touch screens focus the dialog, not the first field, so the
+      // keyboard waits until you tap a field and the whole form stays readable.
+      const touch = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+      requestAnimationFrame(() => {
+        const el = touch ? dialog.current : dialog.current?.querySelector<HTMLElement>("input");
+        el?.focus({ preventScroll: true });
+      });
     } else if (visible) {
       const t = setTimeout(() => {
         setVisible(false);
@@ -142,6 +148,7 @@ export default function ContactModal({ open, onClose, submit = postContact }: Pr
         ref={dialog}
         className={styles.window}
         role="dialog"
+        tabIndex={-1}
         aria-modal="true"
         aria-labelledby={`${uid}-title`}
       >

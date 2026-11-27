@@ -341,29 +341,32 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes draw { from { stroke-dashoffset: 140; } to { stroke-dashoffset: 0; } }
 
-/* Phones: a full-screen glass sheet that scrolls inside itself, with the
-   Send button pinned to the bottom edge. */
+/* Phones: a framed glass card inset from the screen edges. It scrolls inside
+   itself, with the Send button pinned to its bottom edge. */
 @media (max-width: 520px) {
   .backdrop {
-    padding: 0;
-    place-items: stretch;
+    padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
     overflow: hidden;
   }
   .window {
     width: 100%;
-    height: 100svh;
-    padding: max(24px, env(safe-area-inset-top)) 20px max(16px, env(safe-area-inset-bottom));
-    border-radius: 0;
+    max-height: calc(100svh - 24px);
+    padding: 26px 18px 14px;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     overflow-y: auto;
     overscroll-behavior: contain;
     touch-action: pan-y;
+  }
+  .window:focus {
+    outline: none;
   }
   .window::before {
     display: none;
   }
   .submit {
     position: sticky;
-    bottom: 10px;
+    bottom: 4px;
     z-index: 3;
     box-shadow: 0 -12px 30px rgba(5, 6, 10, 0.55), 0 10px 30px rgba(160, 190, 255, 0.18), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   }

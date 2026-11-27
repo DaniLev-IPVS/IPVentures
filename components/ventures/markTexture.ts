@@ -110,7 +110,11 @@ async function rasterSvg(url: string): Promise<HTMLCanvasElement> {
 async function rasterText(p: Extract<Piece, { kind: "text" }>): Promise<HTMLCanvasElement> {
   const size = 240;
   const font = `${p.weight} ${size}px ${p.font}`;
-  await document.fonts.load(font, p.text);
+  // Load only the brand face. next/font's fallback face points at local
+  // Arial, which Android doesn't have, and one failed face rejects the whole
+  // load() call; a failure here must never cost us the logo.
+  const primary = p.font.split(",")[0].trim();
+  await document.fonts.load(`${p.weight} ${size}px ${primary}`, p.text).catch(() => undefined);
   const chars = [...p.text];
   const measure = document.createElement("canvas").getContext("2d")!;
   measure.font = font;

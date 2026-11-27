@@ -12,6 +12,8 @@ import { drawProcessLoop } from "./processLoop";
  * The About-section glass cube: the same glass as the venture cubes, with the
  * "how an IP gets built" loop playing inside it as a live canvas texture.
  * Hover leans the cube toward the cursor and squares a face up to you.
+ * On phones a sideways drag spins it (and a flick keeps it spinning), and
+ * tilting the phone leans it, where the browser exposes the gyroscope.
  */
 
 const ENV_IDLE = 1.5;
@@ -30,6 +32,13 @@ const damp = THREE.MathUtils.damp;
 
 type Quality = { mobile: boolean; reduced: boolean };
 type Pointer = { on: boolean; x: number; y: number };
+/**
+ * Touch and tilt input, written by DOM listeners and read every frame.
+ * `drag` is the running total of finger spin (radians); `release` counts
+ * finished drags, with `vel` the flick speed at the last one (rad/s).
+ * `gx`/`gy` are phone tilt in -1..1.
+ */
+type Motion = { dragging: boolean; drag: number; release: number; vel: number; gx: number; gy: number };
 
 type Loop = { ctx: CanvasRenderingContext2D | null; texture: THREE.CanvasTexture };
 
@@ -71,6 +80,7 @@ function useLoopTexture(reduced: boolean) {
 
 function Cube({
   pointer,
+  motion,
   onHover,
   onLeave,
   quality,
@@ -78,6 +88,7 @@ function Cube({
   env,
 }: {
   pointer: RefObject<Pointer>;
+  motion: RefObject<Motion>;
   onHover: (x: number, y: number) => void;
   onLeave: () => void;
   quality: Quality;
@@ -111,6 +122,11 @@ function Cube({
     tiltX: 0,
     tiltY: 0,
     intro: 0,
+    dragSeen: 0,
+    releaseSeen: 0,
+    fling: 0,
+    gx: 0,
+    gy: 0,
   });
 
   useFrame((state, delta) => {
@@ -131,16 +147,39 @@ function Cube({
       st.yaw = damp(st.yaw, st.snap + st.tiltX * 0.3, 5, dt);
       st.pitch = damp(st.pitch, -st.tiltY * 0.26, 5, dt);
     } else {
-      st.speed = damp(st.speed, reduced ? 0 : 0.14, 1.6, dt);
-      st.yaw += st.speed * dt;
+      const m = motion.current;
+      const spun = m.drag - st.dragSeen;
+      st.dragSeen = m.drag;
+      if (m.dragging) {
+        // The finger owns the cube: follow it, and let the idle spin rest.
+        st.yaw += spun;
+        st.fling = 0;
+        st.speed = 0;
+      } else {
+        if (m.release !== st.releaseSeen) {
+          st.releaseSeen = m.release;
+          st.fling = THREE.MathUtils.clamp(m.vel, -14, 14);
+        }
+        st.yaw += st.fling * dt;
+        st.fling = damp(st.fling, 0, 1.3, dt);
+        st.speed = damp(st.speed, reduced ? 0 : 0.14, 1.6, dt);
+        st.yaw += st.speed * dt;
+      }
       st.pitch = damp(st.pitch, reduced ? 0.28 : 0.3 + Math.sin(t * 0.4) * 0.1, 2.5, dt);
     }
-    body.current?.rotation.set(st.pitch, st.yaw, reduced ? 0 : Math.sin(t * 0.31) * 0.05 * (1 - st.hover));
+    const m = motion.current;
+    st.gx = damp(st.gx, m.gx, 4, dt);
+    st.gy = damp(st.gy, m.gy, 4, dt);
+    body.current?.rotation.set(
+      st.pitch + st.gy * 0.45,
+      st.yaw + st.gx * 0.6,
+      reduced ? 0 : Math.sin(t * 0.31) * 0.05 * (1 - st.hover) - st.gx * 0.08,
+    );
 
     const f = float.current;
     if (f) {
       const bob = reduced ? 0 : Math.sin(t * 0.7) * 0.06 * size;
-      f.position.set(0, bob - (1 - st.intro) * 0.5, st.hover * 0.5);
+      f.position.set(st.gx * 0.08 * size, bob - (1 - st.intro) * 0.5 - st.gy * 0.05 * size, st.hover * 0.5);
       f.scale.setScalar(size * (0.86 + 0.14 * st.intro));
     }
 
@@ -279,6 +318,18 @@ function Cube({
   );
 }
 
+/**
+ * iOS only shares tilt after the visitor allows it, and only from inside a
+ * tap; elsewhere this does nothing.
+ */
+let askedForTilt = false;
+function askForTilt() {
+  if (askedForTilt) return;
+  askedForTilt = true;
+  const D = window.DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> };
+  D?.requestPermission?.().catch(() => undefined);
+}
+
 function Studio({ reduced, map }: { reduced: boolean; map: THREE.Texture }) {
   useFrame(({ scene, clock }) => {
     if (reduced) return;
@@ -294,7 +345,7 @@ function Studio({ reduced, map }: { reduced: boolean; map: THREE.Texture }) {
   );
 }
 
-function Scene({ quality }: { quality: Quality }) {
+function Scene({ quality, motion }: { quality: Quality; motion: RefObject<Motion> }) {
   const pointer = useRef<Pointer>({ on: false, x: 0, y: 0 });
   const [halo] = useState(makeHaloTexture);
   const [env] = useState(makeStudioEnvTexture);
@@ -319,6 +370,7 @@ function Scene({ quality }: { quality: Quality }) {
       <Studio reduced={quality.reduced} map={env} />
       <Cube
         pointer={pointer}
+        motion={motion}
         onHover={(x, y) => Object.assign(pointer.current, { on: true, x, y })}
         onLeave={() => (pointer.current.on = false)}
         quality={quality}
@@ -340,6 +392,7 @@ export default function ProcessCube({
   const wrap = useRef<HTMLDivElement>(null);
   const [quality, setQuality] = useState<Quality | null>(null);
   const [onscreen, setOnscreen] = useState(true);
+  const motion = useRef<Motion>({ dragging: false, drag: 0, release: 0, vel: 0, gx: 0, gy: 0 });
 
   useEffect(() => {
     const coarse = window.matchMedia("(pointer: coarse)");
@@ -360,6 +413,92 @@ export default function ProcessCube({
 
   const live = onscreen && running;
 
+  // Phones: a sideways drag on the cube spins it; vertical drags are left to
+  // the page so you can still swipe on to the next section.
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    let x0 = 0, y0 = 0, xPrev = 0, tPrev = 0, vel = 0, id = -1;
+    let axis: "x" | "y" | null = null;
+    const m = motion.current;
+    const down = (e: PointerEvent) => {
+      if (e.pointerType !== "touch") return;
+      id = e.pointerId;
+      x0 = xPrev = e.clientX;
+      y0 = e.clientY;
+      tPrev = performance.now();
+      vel = 0;
+      axis = null;
+    };
+    const move = (e: PointerEvent) => {
+      if (e.pointerId !== id) return;
+      if (!axis) {
+        const dx = Math.abs(e.clientX - x0);
+        const dy = Math.abs(e.clientY - y0);
+        if (dx < 6 && dy < 6) return;
+        axis = dx > dy ? "x" : "y";
+        if (axis === "x") m.dragging = true;
+      }
+      if (axis !== "x") return;
+      const now = performance.now();
+      // A drag across the whole cube is a bit more than a half turn.
+      const turn = ((e.clientX - xPrev) / Math.max(1, el.clientWidth)) * Math.PI * 1.6;
+      m.drag += turn;
+      vel = turn / Math.max(0.001, (now - tPrev) / 1000);
+      xPrev = e.clientX;
+      tPrev = now;
+    };
+    const up = (e: PointerEvent) => {
+      if (e.pointerId !== id) return;
+      id = -1;
+      if (axis === "x") {
+        m.dragging = false;
+        // A finger resting before lift-off means no flick.
+        m.vel = performance.now() - tPrev > 80 ? 0 : vel;
+        m.release += 1;
+      }
+      askForTilt();
+    };
+    el.addEventListener("pointerdown", down);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    return () => {
+      el.removeEventListener("pointerdown", down);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+    };
+  }, []);
+
+  // Phones: tilting the device leans the cube. Readings are relative to how
+  // you hold it, and the rest position slowly re-centres.
+  const tiltOn = !!quality?.mobile && !quality.reduced && live;
+  useEffect(() => {
+    if (!tiltOn) return;
+    const m = motion.current;
+    let b0: number | null = null;
+    let g0 = 0;
+    const onTilt = (e: DeviceOrientationEvent) => {
+      if (e.beta == null || e.gamma == null) return;
+      if (b0 === null) {
+        b0 = e.beta;
+        g0 = e.gamma;
+      }
+      b0 += (e.beta - b0) * 0.01;
+      g0 += (e.gamma - g0) * 0.01;
+      const clamp1 = (v: number) => Math.max(-1, Math.min(1, v));
+      m.gx = clamp1((e.gamma - g0) / 25);
+      m.gy = clamp1((e.beta - b0) / 25);
+    };
+    window.addEventListener("deviceorientation", onTilt);
+    return () => {
+      window.removeEventListener("deviceorientation", onTilt);
+      m.gx = 0;
+      m.gy = 0;
+    };
+  }, [tiltOn]);
+
   return (
     <div ref={wrap} className={className} style={{ position: "relative", width: "100%", height: "100%" }}>
       {quality && (
@@ -373,7 +512,7 @@ export default function ProcessCube({
           style={{ position: "absolute", inset: 0, background: "transparent" }}
         >
           <Suspense fallback={null}>
-            <Scene quality={quality} />
+            <Scene quality={quality} motion={motion} />
           </Suspense>
         </Canvas>
       )}
