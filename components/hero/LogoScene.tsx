@@ -246,6 +246,9 @@ export default function LogoScene() {
   return (
     <Canvas
       dpr={[1, mobile ? 1.5 : 2]}
+      // Measure layout size, not the on-screen box: inside the Z-scroll the
+      // section is perspective-shrunk while it waits down the track.
+      resize={{ offsetSize: true }}
       camera={{ position: [0, 0, 12], fov: 32, near: 0.1, far: 100 }}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       style={{ background: "transparent" }}

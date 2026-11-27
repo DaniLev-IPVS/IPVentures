@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- IP Studios monogram, outlined (no font dependency) so it can be rasterized into a WebGL texture. Mirrors ipstudios-monogram.svg. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="IP Studios monogram">
+  <g fill="#ff2d5e" fill-rule="evenodd" transform="translate(-9 -1)">
+    <path d="M63 66H94V68.5C89 69 86 71.5 86 77V125C86 130.5 89 133 94 133.5V136H63V133.5C68 133 71 130.5 71 125V77C71 71.5 68 69 63 68.5Z"/>
+    <path d="M96 66H129C145 66 155 73.5 155 86.5C155 99.5 144.5 107 129 107H119V125C119 130.5 122 133 128 133.5V136H96V133.5C101 133 104 130.5 104 125V77C104 71.5 101 69 96 68.5ZM119 69.5V103.5H125C134.5 103.5 139 97.5 139 86.5C139 75.5 134.5 69.5 125 69.5Z"/>
+  </g>
+</svg>

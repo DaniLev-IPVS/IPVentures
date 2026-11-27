@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>IP Ventures — Copy (Step 2: Write)</title>
+<style>
+  :root {
+    --bg: #0b0c0e;
+    --line: rgba(255,255,255,.28);
+    --line-soft: rgba(255,255,255,.12);
+    --fill: rgba(255,255,255,.05);
+    --text: rgba(255,255,255,.82);
+    --muted: rgba(255,255,255,.45);
+    --note: #5aa9ff;
+    --note-bg: rgba(90,169,255,.10);
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+    --sans: "Montserrat", system-ui, sans-serif;
+    --gap: 1800; /* px between planes on the Z track */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--text); font-family: var(--sans); }
+  body { overscroll-behavior: none; }
+  #track { height: 500vh; } /* scroll distance drives camera Z */
+
+  /* ---------- 3D stage ---------- */
+  #stage { position: fixed; inset: 0; perspective: 1000px; perspective-origin: 50% 50%; overflow: hidden; }
+  #world { position: absolute; inset: 0; transform-style: preserve-3d; will-change: transform; }
+  .plane {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    transform-style: preserve-3d; backface-visibility: hidden; will-change: transform, opacity;
+  }
+  .frame {
+    position: relative; width: min(1180px, 92vw); height: min(720px, 84vh);
+    border: 1px dashed var(--line-soft); border-radius: 14px;
+  }
+  .plane-tag {
+    position: absolute; top: 14px; right: 16px; font: 600 10px/1 var(--mono); letter-spacing: .12em;
+    color: var(--muted); text-transform: uppercase;
+  }
+
+  /* ---------- wireframe primitives ---------- */
+  .box { border: 1px solid var(--line); background: var(--fill); border-radius: 8px; position: relative; }
+  .x::before, .x::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(to top right, transparent calc(50% - .5px), var(--line-soft) 50%, transparent calc(50% + .5px));
+  }
+  .x::after { background: linear-gradient(to top left, transparent calc(50% - .5px), var(--line-soft) 50%, transparent calc(50% + .5px)); }
+  .lbl { font: 500 11px/1.3 var(--mono); color: var(--muted); letter-spacing: .04em; }
+  .bar { height: 10px; border-radius: 4px; background: rgba(255,255,255,.14); }
+  .bar.t { height: 22px; background: rgba(255,255,255,.22); border-radius: 6px; }
+  .eyebrow { font: 600 11px/1 var(--mono); letter-spacing: .3em; color: var(--muted); text-transform: uppercase; }
+  .pill { border: 1px solid var(--line); border-radius: 99px; padding: 10px 18px; font: 500 12px/1 var(--mono); color: var(--text); background: var(--fill); display: inline-block; }
+  .pill.glass { background: rgba(255,255,255,.08); backdrop-filter: blur(10px); border-color: rgba(255,255,255,.35); cursor: pointer; }
+  .pill.glass:hover { background: rgba(255,255,255,.16); }
+
+  /* ---------- annotations ---------- */
+  .note {
+    position: absolute; font: 500 11px/1.45 var(--mono); color: var(--note); background: var(--note-bg);
+    border: 1px solid rgba(90,169,255,.35); border-radius: 6px; padding: 7px 9px; max-width: 250px; z-index: 5;
+  }
+  .note b { color: #9cccff; font-weight: 600; }
+  .note .n { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--note); color: #000; font-size: 10px; margin-right: 6px; font-weight: 700; }
+  body.hide-notes .note { display: none; }
+
+  /* ---------- HUD (fixed, not in 3D) ---------- */
+  /* Right-side nav: minimal dot rail that expands on hover */
+  .snav {
+    position: fixed; right: 22px; top: 50%; transform: translateY(-50%); z-index: 40;
+    display: flex; flex-direction: column; align-items: stretch; gap: 4px;
+    width: 34px; padding: 12px 0; border-radius: 20px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.14); background: rgba(20,20,22,.35); backdrop-filter: blur(14px);
+    transition: width .45s cubic-bezier(.16,1,.3,1), background .3s, border-color .3s, padding .45s cubic-bezier(.16,1,.3,1);
+  }
+  .snav:hover, .snav.open { width: 184px; padding: 14px 0; background: rgba(20,20,22,.7); border-color: rgba(255,255,255,.3); }
+  .snav .mark { width: 14px; height: 14px; border: 1px solid var(--line); border-radius: 3px; margin: 0 0 10px 9px; transition: margin .45s; }
+  .snav:hover .mark, .snav.open .mark { margin-left: 16px; }
+  .snav button.item {
+    display: flex; align-items: center; gap: 12px; height: 26px; padding: 0 0 0 12px; background: none; border: 0; cursor: pointer;
+    color: var(--muted); font: 500 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; text-align: left;
+  }
+  .snav .item i { flex: none; width: 8px; height: 8px; border-radius: 50%; border: 1px solid rgba(255,255,255,.4); transition: .3s; }
+  .snav .item span { opacity: 0; transform: translateX(8px); transition: opacity .3s, transform .45s cubic-bezier(.16,1,.3,1); }
+  .snav:hover .item span, .snav.open .item span { opacity: 1; transform: none; }
+  .snav .item:nth-child(3) span { transition-delay: .03s } .snav .item:nth-child(4) span { transition-delay: .06s }
+  .snav .item:nth-child(5) span { transition-delay: .09s } .snav .item:nth-child(6) span { transition-delay: .12s }
+  .snav .item:hover { color: #fff; }
+  .snav .item.active { color: #fff; }
+  .snav .item.active i { background: #fff; border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,.6); }
+  .snav .contact {
+    margin: 10px 6px 0; height: 22px; border-radius: 99px; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.08);
+    color: #fff; font: 600 10px/1 var(--mono); letter-spacing: .14em; cursor: pointer; white-space: nowrap; overflow: hidden;
+    transition: height .45s cubic-bezier(.16,1,.3,1), margin .45s, background .3s;
+  }
+  .snav .contact { display: flex; align-items: center; justify-content: center; padding: 0; }
+  .snav .contact b { font-weight: 600; font-size: 11px; } .snav .contact em { font-style: normal; display: inline-block; max-width: 0; overflow: hidden; opacity: 0; transition: max-width .45s cubic-bezier(.16,1,.3,1), opacity .3s .1s; }
+  .snav:hover .contact, .snav.open .contact { height: 34px; margin: 14px 12px 0; }
+  .snav:hover .contact em, .snav.open .contact em { opacity: 1; max-width: 120px; }
+  .snav .contact:hover { background: rgba(255,255,255,.2); }
+  .snav-note { position: fixed; right: 220px; top: 50%; transform: translateY(-50%); z-index: 39; }
+
+  .minimap { position: fixed; left: 24px; bottom: 22px; z-index: 40; width: 340px; padding: 12px 14px; border: 1px solid var(--line-soft); border-radius: 10px; background: rgba(15,15,17,.75); backdrop-filter: blur(8px); }
+  .minimap .lbl { margin-bottom: 10px; display: flex; justify-content: space-between; }
+  .minimap svg { width: 100%; height: 46px; overflow: visible; }
+
+  .toolbar { position: fixed; right: 24px; bottom: 22px; z-index: 40; display: flex; gap: 8px; }
+  .toolbar button { font: 500 11px/1 var(--mono); color: var(--text); border: 1px solid var(--line); background: rgba(20,20,22,.7); border-radius: 8px; padding: 9px 12px; cursor: pointer; }
+  .toolbar button:hover { border-color: #fff; }
+
+  .step-badge { position: fixed; left: 24px; top: 24px; z-index: 40; font: 600 10px/1.5 var(--mono); letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+  .step-badge b { color: var(--note); }
+
+  /* ---------- HERO ---------- */
+  .hero .headline { position: absolute; top: 12%; left: 50%; transform: translateX(-50%); text-align: center; }
+  .hero .headline .bar { width: 380px; margin: 0 auto; }
+  .hero .logo3d { background: var(--bg); position: absolute; left: 50%; top: 54%; width: 300px; height: 300px; transform: translate(-50%,-50%); border-radius: 18px; }
+  .hero .cue { position: absolute; bottom: 7%; left: 50%; transform: translateX(-50%); text-align: center; }
+  .hero .cue .mouse { width: 22px; height: 34px; border: 1px solid var(--line); border-radius: 12px; margin: 0 auto 10px; position: relative; }
+  .hero .cue .mouse::after { content: ""; position: absolute; left: 50%; top: 7px; width: 2px; height: 6px; background: #fff; transform: translateX(-50%); animation: wheel 1.6s infinite; }
+  @keyframes wheel { 0% { opacity: 1; top: 7px } 100% { opacity: 0; top: 18px } }
+
+  /* ---------- ABOUT ---------- */
+  .about .col { position: absolute; left: 7%; top: 16%; width: 52%; }
+  .about .col > * + * { margin-top: 16px; }
+  .about .stats { position: absolute; left: 7%; bottom: 13%; display: flex; gap: 14px; }
+  .about .stat { width: 170px; height: 96px; padding: 14px; }
+  .about .stat .bar.t { width: 60%; margin-bottom: 10px; }
+  .about .side { position: absolute; right: 6%; top: 16%; width: 30%; height: 62%; border-radius: 14px; }
+
+  /* ---------- VENTURES ---------- */
+  .ventures .head { position: absolute; top: 9%; left: 50%; transform: translateX(-50%); text-align: center; width: 60%; }
+  .ventures .head > * + * { margin-top: 14px; }
+  .ventures .row { position: absolute; left: 0; right: 0; top: 33%; display: flex; justify-content: space-around; transform-style: preserve-3d; }
+  .vent { width: 260px; text-align: center; transform-style: preserve-3d; cursor: pointer; }
+  .cube-wrap { width: 160px; height: 160px; margin: 0 auto 70px; perspective: 1400px; }
+  .cube .core { position: absolute; inset: 30px; display: grid; place-items: center; font: 700 12px/1.2 var(--mono); letter-spacing: .14em; color: #fff; text-align: center; border: 1px dashed rgba(90,169,255,.6); border-radius: 50%; background: rgba(90,169,255,.08); }
+  .cube { width: 160px; height: 160px; position: relative; transform-style: preserve-3d; transition: transform .25s ease-out; }
+  .cube .face { position: absolute; inset: 0; border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.04); display: grid; place-items: center; font: 600 11px/1 var(--mono); letter-spacing: .12em; color: rgba(255,255,255,.7); }
+  .cube .f1 { transform: translateZ(80px); } .cube .f2 { transform: rotateY(180deg) translateZ(80px); }
+  .cube .f3 { transform: rotateY(90deg) translateZ(80px); } .cube .f4 { transform: rotateY(-90deg) translateZ(80px); }
+  .cube .f5 { transform: rotateX(90deg) translateZ(80px); } .cube .f6 { transform: rotateX(-90deg) translateZ(80px); }
+  .vent:hover .face { border-color: #fff; background: rgba(90,169,255,.08); box-shadow: 0 0 24px rgba(90,169,255,.25) inset; }
+  .vent .bar { margin: 8px auto; }
+  .vent .link { margin-top: 12px; display: inline-block; font: 500 11px/1 var(--mono); color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 3px; }
+
+  /* ---------- TEAM ---------- */
+  .team .head { position: absolute; top: 10%; left: 7%; width: 50%; }
+  .team .head > * + * { margin-top: 14px; }
+  .team .grid { position: absolute; left: 7%; right: 7%; bottom: 12%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .member { padding: 16px; height: 300px; display: flex; flex-direction: column; gap: 10px; }
+  .member .photo { flex: 1; border-radius: 6px; }
+  .member .bar.t { width: 70%; } .member .bar { width: 45%; }
+
+  /* ---------- FOOTER ---------- */
+  .footer .frame { height: min(780px, 88vh); }
+  .footer .cta { position: absolute; top: 12%; left: 7%; right: 7%; }
+  .footer .cta .big { height: 62px; width: 72%; border-radius: 10px; background: rgba(255,255,255,.22); }
+  .footer .cta .big + .big { width: 46%; margin-top: 14px; }
+  .footer .cta .pill { margin-top: 34px; padding: 16px 30px; font-size: 13px; }
+  .footer .cols { position: absolute; left: 7%; right: 7%; top: 56%; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 30px; }
+  .footer .cols .c > * + * { margin-top: 10px; }
+  .footer .wordmark { position: absolute; left: 7%; right: 7%; bottom: 13%; height: 70px; border-radius: 8px; }
+  .footer .legal { position: absolute; left: 7%; right: 7%; bottom: 4%; display: flex; justify-content: space-between; border-top: 1px solid var(--line-soft); padding-top: 14px; }
+  .footer .legal span { margin-left: 18px; }
+
+  /* ---------- CONTACT MODAL ---------- */
+  .modal-back { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.45); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; }
+  .modal-back.open { display: flex; }
+  .modal {
+    width: min(520px, 92vw); max-height: 94vh; overflow: auto; padding: 30px; border-radius: 22px; position: relative;
+    background: linear-gradient(160deg, rgba(255,255,255,.14), rgba(255,255,255,.04));
+    border: 1px solid rgba(255,255,255,.3); backdrop-filter: blur(24px) saturate(140%);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.35);
+    animation: pop .45s cubic-bezier(.16,1,.3,1);
+  }
+  @keyframes pop { from { opacity: 0; transform: translateZ(0) scale(.92) translateY(14px); filter: blur(6px) } to { opacity: 1; transform: none; filter: none } }
+  .modal .close { position: absolute; top: 16px; right: 16px; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); background: none; color: #fff; cursor: pointer; }
+  .modal .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field { margin-top: 14px; }
+  .field .lbl { display: block; margin-bottom: 6px; }
+  .field .input { height: 42px; border-radius: 10px; border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.2); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips span { font: 500 11px/1 var(--mono); padding: 8px 12px; border-radius: 99px; border: 1px solid rgba(255,255,255,.25); color: var(--muted); cursor: pointer; }
+  .chips span.on { background: rgba(255,255,255,.9); color: #000; border-color: #fff; }
+  .modal .submit { margin-top: 22px; width: 100%; height: 46px; border-radius: 12px; background: #fff; color: #000; font: 600 12px/1 var(--mono); letter-spacing: .1em; border: 0; }
+  .mnotes { position: absolute; left: calc(100% + 16px); top: 20px; width: 250px; }
+  .mnotes .note { position: static; margin-bottom: 10px; max-width: none; }
+  @media (max-width: 1150px) { .mnotes { position: static; width: auto; margin-top: 16px; } }
+
+
+  /* ---------- Step 2 copy styles ---------- */
+  .hl-hero { font: 500 13px/1.9 var(--sans); letter-spacing: .42em; color: rgba(255,255,255,.88); }
+  .tx-cue { font: 500 10px/1 var(--sans); letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
+  .tx-h2 { font: 500 clamp(24px, 3vw, 40px)/1.15 var(--sans); letter-spacing: -.02em; color: #fff; }
+  .tx-body { font: 400 15px/1.65 var(--sans); color: rgba(255,255,255,.66); max-width: 560px; }
+  .tx-num { font: 500 30px/1 var(--sans); color: #fff; letter-spacing: -.02em; margin-bottom: 10px; }
+  .tx-small { font: 400 13px/1.5 var(--sans); color: rgba(255,255,255,.55); }
+  .tx-tag { font: 600 10px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .tx-name { font: 500 18px/1.2 var(--sans); color: #fff; margin-bottom: 6px; }
+  .tx-one { font: 400 13px/1.5 var(--sans); color: rgba(255,255,255,.6); }
+  .tx-xl { font: 500 clamp(34px, 5.4vw, 76px)/1.05 var(--sans); letter-spacing: -.03em; color: #fff; }
+  .tx-xl.dim { color: rgba(255,255,255,.4); }
+  .tx-link { font: 400 14px/1.4 var(--sans); color: rgba(255,255,255,.7); }
+  .team .grid.g3 { grid-template-columns: repeat(3, 1fr); }
+  .footer .cols { grid-template-columns: 2fr 1fr 1fr; }
+  .member .tx-tag { margin: 2px 0 4px; } .member .link, .vent .link { align-self: flex-start; }
+  .input.ph { display: flex; align-items: center; padding: 0 14px; font: 400 14px/1 var(--sans); color: rgba(255,255,255,.35); }
+  .ventures .row { top: 30%; }
+  .about .stat { height: auto; }
+  .member .link { font: 500 11px/1 var(--mono); color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 3px; margin-top: 8px; }
+  .member { height: auto; gap: 4px; } .member .photo { flex: none; height: clamp(90px, 18vh, 170px); margin-bottom: 10px; }
+
+  /* ---------- side view ---------- */
+  body.side #stage { perspective: 4200px; perspective-origin: -40% 30%; }
+  body.side .plane { opacity: .9 !important; visibility: visible !important; }
+
+  @media (max-width: 760px) {
+    .note { display: none; } .minimap { display: none; } .snav { right: 10px; }
+    .ventures .row { flex-direction: column; align-items: center; top: 24%; gap: 8px; }
+    .cube-wrap { width: 90px; height: 90px; margin-bottom: 10px; }
+    .cube { transform: scale(.56); transform-origin: 0 0; }
+    .team .grid { grid-template-columns: 1fr 1fr; } .member { height: 170px; }
+    .about .side { display: none; } .about .col { width: 86%; }
+    .footer .cols { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="step-badge"><b>Step 2 of 4 · Copy</b><br/>IP Ventures · copy in the wireframe</div>
+
+<!-- Right-side nav: dots when idle, expands with labels on hover (fixed, outside the 3D world) -->
+<nav class="snav" id="snav" aria-label="Sections">
+  <div class="mark" title="IP Ventures"></div>
+  <div id="snavItems" style="display:contents"></div>
+  <button class="contact" data-contact><b>✉</b><em>&nbsp; CONTACT</em></button>
+</nav>
+
+
+<div id="stage"><div id="world">
+
+  <!-- 0 · HERO (unchanged from today's site) -->
+  <section class="plane hero" data-name="Home">
+    <div class="frame">
+      <div class="plane-tag">Z 0 · Hero — keep as-is</div>
+      <div class="headline"><div class="hl-hero">BUILDING THE IP<span style="text-transform:none">s</span> OF THE FUTURE</div></div>
+      <div class="box x logo3d"><div class="lbl" style="position:absolute;bottom:-22px;width:100%;text-align:center">existing 3D glass logo</div></div>
+      <div class="cue"><div class="mouse"></div><div class="tx-cue">Scroll to enter</div></div>
+    </div>
+  </section>
+
+  <!-- 1 · ABOUT -->
+  <section class="plane about" data-name="About">
+    <div class="frame">
+      <div class="plane-tag">Z −1 · About us</div>
+      <div class="col">
+        <div class="eyebrow">01 — About</div>
+        <h2 class="tx-h2">We build the characters, channels and companies the internet can’t stop watching.</h2>
+        <p class="tx-body">IP Ventures is a venture studio for internet-native IP. We start companies, run them, and partner with the people who build them, across social media, animation and entertainment. Every venture runs with its own team. What they share is knowledge, know-how and resources, so every win makes the next one faster.</p>
+      </div>
+      <div class="stats">
+        <div class="box stat"><div class="tx-num">1B+</div><div class="tx-small">views across our ventures</div></div>
+        <div class="box stat"><div class="tx-num">1,000+</div><div class="tx-small">videos produced</div></div>
+        <div class="box stat"><div class="tx-num">1M+</div><div class="tx-small">followers grown</div></div>
+      </div>
+      <div class="note" style="right:3%;bottom:16%"><b>[confirm]</b> 1M+ followers is from the IP Animations site; is there a bigger group-wide number, or another stat you prefer?</div>
+    </div>
+  </section>
+
+  <!-- 2 · VENTURES -->
+  <section class="plane ventures" data-name="Ventures">
+    <div class="frame">
+      <div class="plane-tag">Z −2 · Our ventures</div>
+      <div class="head">
+        <div class="eyebrow">02 — Ventures</div>
+        <h2 class="tx-h2" style="text-align:center">Three companies. One playbook.</h2>
+        <div class="tx-small" style="text-align:center">Hover to look inside. Click to visit.</div>
+      </div>
+      <div class="row">
+        <div class="vent" data-v><div class="cube-wrap"><div class="cube">
+          <div class="core">INFLUITY<br/><span style="font-size:8px;color:var(--note)">logo</span></div><div class="face f1"></div><div class="face f2"></div><div class="face f3"></div><div class="face f4"></div><div class="face f5"></div><div class="face f6"></div>
+        </div></div><div class="tx-tag">Social growth</div><div class="tx-name">Influity</div><p class="tx-one">Social accounts built around what your audience already loves, then pointed at your product.</p><span class="link">influity.ai ↗</span></div>
+        <div class="vent" data-v><div class="cube-wrap"><div class="cube">
+          <div class="core">IP ANIM.<br/><span style="font-size:8px;color:var(--note)">logo</span></div><div class="face f1"></div><div class="face f2"></div><div class="face f3"></div><div class="face f4"></div><div class="face f5"></div><div class="face f6"></div>
+        </div></div><div class="tx-tag">Animation studio</div><div class="tx-name">IP Animations</div><p class="tx-one">Animations people want. Made by animators, built to get watched.</p><span class="link">ipanimations.ai ↗</span></div>
+        <div class="vent" data-v><div class="cube-wrap"><div class="cube">
+          <div class="core">IP STUDIOS<br/><span style="font-size:8px;color:var(--note)">logo</span></div><div class="face f1"></div><div class="face f2"></div><div class="face f3"></div><div class="face f4"></div><div class="face f5"></div><div class="face f6"></div>
+        </div></div><div class="tx-tag">Entertainment</div><div class="tx-name">IP Studios</div><p class="tx-one">Monetizing IP and scaling internet trends, starting with the universe of Italian brainrot.</p><span class="link">ipstudios.xyz ↗</span></div>
+      </div>
+      <div class="note" style="right:1%;bottom:3%"><b>[confirm]</b> IP Studios wording + domain with Austin &amp; Blair.</div>
+    </div>
+  </section>
+
+  <!-- 3 · TEAM -->
+  <section class="plane team" data-name="Team">
+    <div class="frame">
+      <div class="plane-tag">Z −3 · Team</div>
+      <div class="head">
+        <div class="eyebrow">03 — Team</div>
+        <h2 class="tx-h2">Operators, not spectators.</h2>
+        <p class="tx-body">We’ve grown channels, characters and companies from zero. Now we do it on purpose.</p>
+      </div>
+      <div class="grid g3">
+        <div class="box member"><div class="box x photo"></div><div class="tx-name">Dani Lev</div><div class="tx-tag">Co-founder &amp; President</div><div class="tx-small">Runs product and operations across the studio.</div><span class="link">LinkedIn ↗</span></div>
+        <div class="box member"><div class="box x photo"></div><div class="tx-name">Dan Rozenberg</div><div class="tx-tag">Co-founder</div><div class="tx-small">Partnerships and growth. Opens the doors.</div><span class="link">LinkedIn ↗</span></div>
+        <div class="box member"><div class="box x photo"></div><div class="tx-name">Mike Nike</div><div class="tx-tag">Co-founder</div><div class="tx-small">Characters and IP. Owns the cast.</div><span class="link">LinkedIn ↗</span></div>
+      </div>
+      <div class="note" style="right:3%;top:8%"><b>[confirm]</b> Titles, and whether anyone besides the three founders goes here.</div>
+    </div>
+  </section>
+
+  <!-- 4 · FOOTER -->
+  <section class="plane footer" data-name="Contact">
+    <div class="frame">
+      <div class="plane-tag">Z −4 · Full-page footer</div>
+      <div class="cta">
+        <div class="tx-xl">Have an IP worth building?</div>
+        <div class="tx-xl dim">Let’s talk.</div>
+        <span class="pill glass" data-contact>Contact us →</span>
+      </div>
+      <div class="cols">
+        <div class="c"><div class="lbl">IP Ventures</div><div class="tx-small">Building the IPs of the future.<br/>Miami, Florida.</div></div>
+        <div class="c"><div class="lbl">Ventures</div><div class="tx-link">Influity</div><div class="tx-link">IP Animations</div><div class="tx-link">IP Studios</div></div>
+        <div class="c"><div class="lbl">Company</div><div class="tx-link">About</div><div class="tx-link">Team</div><div class="tx-link" data-contact style="cursor:pointer">Contact</div></div>
+      </div>
+      <div class="box x wordmark"><div class="lbl" style="position:absolute;left:12px;top:-18px">giant IP Ventures wordmark, edge to edge</div></div>
+      <div class="legal"><div class="lbl">© 2026 IP Ventures. All rights reserved.</div><div class="lbl"><span>Privacy</span><span>Terms</span><span data-contact style="cursor:pointer;color:#fff">Contact</span></div></div>
+    </div>
+  </section>
+
+</div></div>
+
+<!-- Contact modal (2D overlay above the 3D world) -->
+<div class="modal-back" id="modal">
+  <div class="modal">
+    <button class="close" data-close>✕</button>
+    <div class="eyebrow">Contact</div>
+    <div class="tx-h2" style="margin-top:12px;font-size:26px">Let’s build something.</div>
+    <p class="tx-small" style="margin-top:8px">Tell us a little about you and we’ll get back to you soon.</p>
+    <div class="row2">
+      <div class="field"><span class="lbl">Name</span><div class="input ph">Jane Doe</div></div>
+      <div class="field"><span class="lbl">Phone</span><div class="input ph">+1 (555) 000-0000</div></div>
+    </div>
+    <div class="field"><span class="lbl">Email</span><div class="input ph">jane@company.com</div></div>
+    <div class="field"><span class="lbl">Reason for contact</span>
+      <div class="chips" id="chips"><span class="on">Partnership</span><span>Investing</span><span>Work with a venture</span><span>Press</span><span>Careers</span><span>Something else</span></div>
+    </div>
+    <div class="field"><span class="lbl">Message (optional)</span><div class="input ph" style="height:70px;align-items:flex-start;padding-top:12px">Anything we should know?</div></div>
+    <button class="submit">SEND MESSAGE</button>
+    <p class="tx-small" style="margin-top:12px;text-align:center;font-size:11px">We only use this to reply to you. See our Privacy Policy.</p>
+    <div class="mnotes">
+      <div class="note"><b>Errors</b><br/>Please add your name.<br/>That email doesn’t look right.<br/>Please add a number we can reach you on.<br/>Pick a reason so we can send you to the right person.</div>
+      <div class="note"><b>Success</b><br/>Message received.<br/>Thanks, {first name}. We’ll be in touch soon.</div>
+      <div class="note"><b>If sending fails</b><br/>Something went wrong. Try again, or email us at info@ipventures.io.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Side-view minimap -->
+<div class="minimap">
+  <div class="lbl"><span>CAMERA · Z TRACK</span><span id="zread">z 0</span></div>
+  <svg viewBox="0 0 300 46" id="mm"></svg>
+</div>
+
+<div class="toolbar">
+  <button id="tNotes">Hide notes</button>
+  <button id="tSide">Side view</button>
+</div>
+
+<div id="track"></div>
+
+<script>
+(() => {
+  const GAP = 1800;
+  const planes = [...document.querySelectorAll('.plane')];
+  const N = planes.length;
+  const world = document.getElementById('world');
+  const rail = document.getElementById('snavItems');
+  let target = 0, current = 0;
+
+  // rail
+  planes.forEach((p, i) => {
+    const b = document.createElement('button');
+    b.className = 'item'; b.innerHTML = `<i></i><span>${p.dataset.name}</span>`;
+    b.onclick = () => go(i);
+    rail.appendChild(b);
+  });
+  const railBtns = [...rail.children];
+  const snav = document.getElementById('snav');
+  snav.addEventListener('click', e => { if (matchMedia('(hover: none)').matches && !snav.classList.contains('open')) { snav.classList.add('open'); e.stopPropagation(); } });
+  addEventListener('click', e => { if (!snav.contains(e.target)) snav.classList.remove('open'); });
+
+  // minimap
+  const mm = document.getElementById('mm');
+  const X = i => 14 + i * (272 / (N - 1));
+  mm.innerHTML = `<line x1="8" y1="20" x2="292" y2="20" stroke="rgba(255,255,255,.25)"/>` +
+    planes.map((p, i) => `<line x1="${X(i)}" y1="10" x2="${X(i)}" y2="30" stroke="rgba(255,255,255,.55)"/><text x="${X(i)}" y="44" fill="rgba(255,255,255,.45)" font-size="8" font-family="monospace" text-anchor="middle">${p.dataset.name}</text>`).join('') +
+    `<g id="cam"><path d="M-7 -6 h10 v12 h-10 z M3 -3 l6 -4 v14 l-6 -4 z" fill="#5aa9ff"/></g>`;
+  const cam = document.getElementById('cam');
+  const zread = document.getElementById('zread');
+
+  const maxScroll = () => document.documentElement.scrollHeight - innerHeight;
+  const progressFromScroll = () => (scrollY / maxScroll()) * (N - 1);
+  function go(i) { scrollTo({ top: (i / (N - 1)) * maxScroll(), behavior: 'smooth' }); }
+
+  // soft snap to nearest plane after scrolling stops
+  let snapT;
+  addEventListener('scroll', () => {
+    target = progressFromScroll();
+    clearTimeout(snapT);
+    snapT = setTimeout(() => { const r = Math.round(target); if (Math.abs(r - target) > 0.02) go(r); }, 180);
+  }, { passive: true });
+
+  const side = () => document.body.classList.contains('side');
+
+  function frame() {
+    current += (target - current) * 0.085;
+    const camZ = current * GAP;
+    world.style.transform = side()
+      ? `translateZ(${-1400 + camZ * 0.15}px) rotateY(58deg) translateX(${-camZ * 0.25}px)`
+      : `translateZ(${camZ}px)`;
+
+    planes.forEach((p, i) => {
+      const z = -i * GAP;
+      const d = z + camZ;            // <0 ahead of camera, >0 flown past
+      let o;
+      if (d <= 0) o = Math.max(0, 1 + d / (GAP * 1.15));   // fog in from distance
+      else o = Math.max(0, 1 - d / 650);                    // dissolve as it passes the lens
+      p.style.transform = side() ? `translateZ(${z * 0.35}px)` : `translateZ(${z}px)`;
+      p.style.opacity = o.toFixed(3);
+      p.style.visibility = o < 0.01 ? 'hidden' : 'visible';
+      p.style.pointerEvents = Math.abs(d) < GAP * 0.35 ? 'auto' : 'none';
+      p.style.filter = d < -200 ? `blur(${Math.min(6, -d / 600).toFixed(1)}px)` : 'none';
+    });
+
+    const idx = Math.round(current);
+    railBtns.forEach((b, i) => b.classList.toggle('active', i === idx));
+    cam.setAttribute('transform', `translate(${X(0) + current * (272 / (N - 1))} 20)`);
+    zread.textContent = `z ${Math.round(-camZ)}  ·  ${planes[Math.min(N - 1, idx)].dataset.name}`;
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // cube hover tilt + idle spin
+  document.querySelectorAll('[data-v]').forEach((v, k) => {
+    const cube = v.querySelector('.cube'); const core = v.querySelector('.core');
+    let hover = false, rx = -18, ry = 30, t0 = k * 1.7;
+    v.addEventListener('mousemove', e => {
+      hover = true;
+      const r = v.getBoundingClientRect();
+      const nx = (e.clientX - r.left) / r.width - .5, ny = (e.clientY - r.top) / r.height - .5;
+      rx = -ny * 50; ry = nx * 60;
+      cube.style.transform = `translateZ(60px) rotateX(${rx}deg) rotateY(${ry}deg)`; core.style.transform = `rotateY(${-ry}deg) rotateX(${-rx}deg)`;
+    });
+    v.addEventListener('mouseleave', () => hover = false);
+    (function idle(t) {
+      if (!hover) {
+        const s = t / 1000 + t0;
+        const ax = -18 + Math.sin(s * .7) * 6, ay = 30 + s * 14;
+        cube.style.transform = `translateY(${Math.sin(s * 1.2) * 8}px) rotateX(${ax}deg) rotateY(${ay}deg)`;
+        core.style.transform = `rotateY(${-ay}deg) rotateX(${-ax}deg)`;
+      }
+      requestAnimationFrame(idle);
+    })(0);
+  });
+
+  // modal
+  const modal = document.getElementById('modal');
+  document.querySelectorAll('[data-contact]').forEach(b => b.onclick = () => modal.classList.add('open'));
+  modal.onclick = e => { if (e.target === modal || e.target.dataset.close !== undefined) modal.classList.remove('open'); };
+  addEventListener('keydown', e => e.key === 'Escape' && modal.classList.remove('open'));
+  document.getElementById('chips').onclick = e => {
+    if (e.target.tagName !== 'SPAN') return;
+    [...e.currentTarget.children].forEach(c => c.classList.toggle('on', c === e.target));
+  };
+
+  // toolbar
+  const tN = document.getElementById('tNotes'), tS = document.getElementById('tSide');
+  tN.onclick = () => { document.body.classList.toggle('hide-notes'); tN.textContent = document.body.classList.contains('hide-notes') ? 'Show notes' : 'Hide notes'; };
+  tS.onclick = () => { document.body.classList.toggle('side'); tS.textContent = side() ? 'Camera view' : 'Side view'; };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,428 @@
+.root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+/* The camera: every plane is a full-screen layer pushed along Z. */
+.stage {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  perspective: 1000px;
+  perspective-origin: 50% 50%;
+}
+
+.plane {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* Content column inside each plane */
+.frame {
+  position: relative;
+  width: min(1180px, calc(100vw - 140px));
+  max-height: calc(100svh - 48px);
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* ---------- Typography ---------- */
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.h2 {
+  margin-top: 18px;
+  font-size: clamp(1.75rem, 3.6vw, 3.1rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+.body {
+  margin-top: 20px;
+  max-width: 580px;
+  font-size: clamp(0.95rem, 1.15vw, 1.05rem);
+  line-height: 1.7;
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.62);
+}
+.sub {
+  margin-top: 12px;
+  font-size: 0.9rem;
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.5);
+}
+.center {
+  text-align: center;
+}
+
+/* ---------- Hero scroll cue ---------- */
+.cue {
+  position: absolute;
+  bottom: max(28px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  animation: cueIn 1.6s var(--ease-out) 3.2s both;
+}
+.mouse {
+  position: relative;
+  width: 20px;
+  height: 32px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+.mouse::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 7px;
+  width: 2px;
+  height: 6px;
+  border-radius: 1px;
+  background: #fff;
+  transform: translateX(-50%);
+  animation: wheel 1.8s ease-in-out infinite;
+}
+@keyframes wheel {
+  0% { opacity: 0; transform: translate(-50%, 0); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, 10px); }
+}
+@keyframes cueIn {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ---------- About ---------- */
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(32px, 6vh, 64px);
+}
+.aboutText {
+  max-width: 760px;
+}
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+/* ---------- Ventures ---------- */
+.ventures {
+  height: min(820px, calc(100svh - 48px));
+  display: flex;
+  flex-direction: column;
+}
+.cubes {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 8px 0;
+}
+.ventureList {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  text-align: center;
+}
+.ventureList li {
+  max-width: 310px;
+  margin: 0 auto;
+}
+.tag {
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+.vName {
+  margin-top: 8px;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+.vLine {
+  margin-top: 8px;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.6);
+}
+.link {
+  display: inline-block;
+  margin-top: 12px;
+  padding-bottom: 2px;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  transition: color 0.2s, border-color 0.2s;
+}
+.link:hover {
+  color: #fff;
+  border-color: #fff;
+}
+
+/* ---------- Team ---------- */
+.team {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(28px, 5vh, 48px);
+}
+.teamHead {
+  max-width: 640px;
+}
+.teamRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  max-width: 980px;
+}
+
+/* ---------- Footer ---------- */
+.footer {
+  height: min(860px, calc(100svh - 48px));
+  display: flex;
+  flex-direction: column;
+}
+.cta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(24px, 4vh, 40px);
+}
+.xl {
+  font-size: clamp(2.4rem, 6.4vw, 6rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+.dim {
+  display: block;
+  color: rgba(255, 255, 255, 0.38);
+}
+.cols {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 32px;
+  margin-top: auto;
+  padding-top: 40px;
+}
+.cols ul {
+  list-style: none;
+}
+.colTitle {
+  margin-bottom: 14px;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+.blurb {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.62);
+}
+.colLink {
+  display: inline-block;
+  padding: 4px 0;
+  font-size: 0.92rem;
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.72);
+  transition: color 0.2s;
+}
+.colLink:hover {
+  color: #fff;
+}
+.wordmark {
+  width: 100%;
+  height: auto;
+  margin-top: clamp(24px, 4vh, 44px);
+  opacity: 0.09;
+  pointer-events: none;
+}
+.legal {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.45);
+}
+.small {
+  display: flex;
+  gap: 22px;
+}
+.small a {
+  color: rgba(255, 255, 255, 0.6);
+  transition: color 0.2s;
+}
+.small a:hover {
+  color: #fff;
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 760px) {
+  .frame {
+    width: calc(100vw - 72px);
+    margin-right: 28px; /* room for the nav capsule */
+  }
+  .h2 {
+    margin-top: 12px;
+    font-size: clamp(1.45rem, 6.6vw, 1.9rem);
+  }
+  .body {
+    margin-top: 12px;
+    font-size: 0.86rem;
+    line-height: 1.55;
+  }
+  .about {
+    gap: 22px;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  /* Cubes stack in a left column; names sit beside each one. */
+  .ventures {
+    height: calc(100svh - 120px);
+    display: grid;
+    grid-template-columns: 54% 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: 12px;
+  }
+  .ventures .center {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    text-align: left;
+  }
+  .cubes {
+    grid-column: 1;
+    grid-row: 2;
+    margin: 0;
+  }
+  .ventureList {
+    grid-column: 2;
+    grid-row: 2;
+    grid-template-columns: 1fr;
+    /* Row pitch = the stacked cubes' spacing (1.8 × cube size, where cube
+       size is 0.38 × canvas width and the canvas is 54% of the frame). */
+    grid-template-rows: repeat(3, calc(0.369 * (100vw - 72px)));
+    align-content: center;
+    gap: 0;
+    text-align: left;
+    align-items: center;
+  }
+  .ventureList li {
+    margin: 0;
+  }
+  .ventures .vLine {
+    display: none;
+  }
+  .vName {
+    margin-top: 4px;
+    font-size: 1rem;
+  }
+  .ventures .tag {
+    letter-spacing: 0.14em;
+    font-size: 0.6rem;
+  }
+  .link {
+    margin-top: 6px;
+  }
+
+  .footer {
+    height: auto;
+  }
+  .xl {
+    font-size: clamp(1.9rem, 9vw, 2.4rem);
+  }
+  .cols {
+    margin-top: 0;
+    padding-top: 32px;
+  }
+  .wordmark {
+    margin-top: 24px;
+  }
+
+  /* Team cards swipe sideways */
+  .teamRow {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    margin-right: -28px;
+    padding-right: 28px;
+    scrollbar-width: none;
+    touch-action: pan-x;
+  }
+  .teamRow::-webkit-scrollbar {
+    display: none;
+  }
+  .teamRow > * {
+    flex: 0 0 72%;
+    scroll-snap-align: start;
+  }
+
+  .cols {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .cols > :first-child {
+    grid-column: 1 / -1;
+  }
+  .legal {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+@media (max-height: 720px) and (min-width: 761px) {
+  .ventureList .vLine {
+    display: none;
+  }
+}
